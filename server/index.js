@@ -46,6 +46,10 @@ app.use('/api/google', require('./routes/google'));
 app.use('/api/upload', require('./routes/upload'));
 app.use('/api/roster', require('./routes/roster'));
 app.use('/api/validation', require('./routes/validation'));
+app.use('/api/analytics', require('./routes/analytics'));
+app.use('/api/backup', require('./routes/backup'));
+app.use('/api/notifications', require('./routes/notifications'));
+app.use('/api/health', require('./routes/health'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

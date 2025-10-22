@@ -39,11 +39,13 @@ app.use(morgan('combined'));
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/nemsis', require('./routes/nemsis'));
 app.use('/api/nfirs', require('./routes/nfirs'));
+app.use('/api/neris', require('./routes/neris'));
 app.use('/api/epcrs', require('./routes/epcrs'));
 app.use('/api/cad', require('./routes/cad'));
 app.use('/api/google', require('./routes/google'));
 app.use('/api/upload', require('./routes/upload'));
 app.use('/api/roster', require('./routes/roster'));
+app.use('/api/validation', require('./routes/validation'));
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

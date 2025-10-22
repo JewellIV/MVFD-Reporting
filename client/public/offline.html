@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Mangohick Fire Reporting</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f3f4f6;
+            color: #374151;
+            text-align: center;
+        }
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .icon {
+            width: 64px;
+            height: 64px;
+            margin: 0 auto 20px;
+            background-color: #fef2f2;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .icon svg {
+            width: 32px;
+            height: 32px;
+            color: #dc2626;
+        }
+        h1 {
+            font-size: 24px;
+            font-weight: 600;
+            margin: 0 0 8px;
+            color: #111827;
+        }
+        p {
+            font-size: 16px;
+            margin: 0 0 24px;
+            color: #6b7280;
+        }
+        .status {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            background-color: #fef3c7;
+            color: #92400e;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 24px;
+        }
+        .status::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background-color: #f59e0b;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #dc2626;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        .button:hover {
+            background-color: #b91c1c;
+        }
+        .features {
+            text-align: left;
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+        }
+        .feature {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: #6b7280;
+        }
+        .feature::before {
+            content: '✓';
+            width: 16px;
+            height: 16px;
+            background-color: #10b981;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            margin-right: 12px;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zm0 4a1 1 0 011-1h12a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1V8zm2 2a1 1 0 000 2h6a1 1 0 100-2H5z" clip-rule="evenodd" />
+            </svg>
+        </div>
+        
+        <h1>You're Offline</h1>
+        <p>Don't worry! You can still work with your data.</p>
+        
+        <div class="status">Working Offline</div>
+        
+        <a href="/" class="button">Go to Dashboard</a>
+        
+        <div class="features">
+            <div class="feature">Create and edit incident reports</div>
+            <div class="feature">View cached data and records</div>
+            <div class="feature">Work with patient care records</div>
+            <div class="feature">Data will sync when online</div>
+        </div>
+    </div>
+
+    <script>
+        // Check online status and update UI
+        function updateOnlineStatus() {
+            const status = document.querySelector('.status');
+            if (navigator.onLine) {
+                status.textContent = 'Back Online';
+                status.style.backgroundColor = '#d1fae5';
+                status.style.color = '#065f46';
+                status.querySelector('::before').style.backgroundColor = '#10b981';
+            } else {
+                status.textContent = 'Working Offline';
+                status.style.backgroundColor = '#fef3c7';
+                status.style.color = '#92400e';
+                status.querySelector('::before').style.backgroundColor = '#f59e0b';
+            }
+        }
+
+        // Listen for online/offline events
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', updateOnlineStatus);
+
+        // Initial status check
+        updateOnlineStatus();
+
+        // Auto-refresh when back online
+        window.addEventListener('online', () => {
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

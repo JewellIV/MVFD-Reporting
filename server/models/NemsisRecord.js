@@ -1,197 +1,75 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database');
 
-const nemsisSchema = new mongoose.Schema({
-  // Record Header Information
+const NemsisRecord = sequelize.define('NemsisRecord', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
   recordId: {
-    type: String,
-    required: true,
+    type: DataTypes.STRING(50),
+    allowNull: false,
     unique: true
   },
-  agencyId: {
-    type: String,
-    required: true
+  agencyNumber: {
+    type: DataTypes.STRING(50),
+    allowNull: false
   },
-  submissionDate: {
-    type: Date,
-    default: Date.now
+  incidentNumber: {
+    type: DataTypes.STRING(50),
+    allowNull: false
   },
-  
-  // Patient Information
+  response: {
+    type: DataTypes.JSON
+  },
+  times: {
+    type: DataTypes.JSON
+  },
   patient: {
-    demographics: {
-      age: Number,
-      ageUnits: {
-        type: String,
-        enum: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes']
-      },
-      gender: {
-        type: String,
-        enum: ['M', 'F', 'U']
-      },
-      race: [String],
-      ethnicity: String,
-      weight: Number,
-      weightUnits: {
-        type: String,
-        enum: ['Pounds', 'Kilograms']
-      }
-    },
-    identifiers: {
-      patientId: String,
-      socialSecurityNumber: String,
-      driversLicenseNumber: String,
-      medicalRecordNumber: String
-    }
+    type: DataTypes.JSON
   },
-
-  // Incident Information
-  incident: {
-    incidentNumber: {
-      type: String,
-      required: true
-    },
-    incidentDate: {
-      type: Date,
-      required: true
-    },
-    incidentType: {
-      type: String,
-      required: true
-    },
-    location: {
-      address: String,
-      city: String,
-      state: String,
-      zipCode: String,
-      county: String,
-      latitude: Number,
-      longitude: Number
-    },
-    responseMode: {
-      type: String,
-      enum: ['Emergency', 'Non-Emergency', 'Standby', 'Mutual Aid']
-    },
-    dispatchTime: Date,
-    enRouteTime: Date,
-    arrivalTime: Date,
-    clearTime: Date
-  },
-
-  // Crew Information
-  crew: [{
-    memberId: String,
-    role: {
-      type: String,
-      enum: ['Driver', 'Officer', 'Firefighter', 'EMT', 'Paramedic', 'Chief']
-    },
-    certificationLevel: String,
-    startTime: Date,
-    endTime: Date
-  }],
-
-  // Clinical Information
   clinical: {
-    chiefComplaint: String,
-    primaryImpression: String,
-    secondaryImpression: [String],
-    vitalSigns: [{
-      timestamp: Date,
-      bloodPressure: {
-        systolic: Number,
-        diastolic: Number
-      },
-      heartRate: Number,
-      respiratoryRate: Number,
-      temperature: Number,
-      oxygenSaturation: Number,
-      painScale: Number
-    }],
-    medications: [{
-      name: String,
-      dosage: String,
-      route: String,
-      timeGiven: Date
-    }],
-    procedures: [{
-      procedure: String,
-      timePerformed: Date,
-      success: Boolean,
-      complications: String
-    }],
-    assessment: {
-      primaryAssessment: String,
-      secondaryAssessment: String,
-      differentialDiagnosis: [String]
-    }
+    type: DataTypes.JSON
   },
-
-  // Transport Information
+  disposition: {
+    type: DataTypes.JSON
+  },
   transport: {
-    transportMode: {
-      type: String,
-      enum: ['Ground', 'Air', 'Water', 'Other']
-    },
-    destination: {
-      name: String,
-      type: {
-        type: String,
-        enum: ['Hospital', 'Clinic', 'Home', 'Other']
-      },
-      address: String
-    },
-    transportTime: Date,
-    arrivalTime: Date,
-    patientDisposition: {
-      type: String,
-      enum: ['Treated and Released', 'Transferred', 'Admitted', 'Deceased', 'Refused Care']
-    }
+    type: DataTypes.JSON
   },
-
-  // Quality Assurance
   quality: {
-    dataCompleteness: Number, // Percentage
-    validationErrors: [String],
-    reviewedBy: String,
-    reviewDate: Date,
-    status: {
-      type: String,
-      enum: ['Draft', 'Pending Review', 'Approved', 'Rejected'],
-      default: 'Draft'
-    }
+    type: DataTypes.JSON
   },
-
-  // Metadata
   createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   },
   lastModifiedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    type: DataTypes.INTEGER,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   },
   version: {
-    type: Number,
-    default: 1
+    type: DataTypes.INTEGER,
+    defaultValue: 1
   },
   isOffline: {
-    type: Boolean,
-    default: false
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   syncStatus: {
-    type: String,
-    enum: ['Pending', 'Synced', 'Error'],
-    default: 'Pending'
+    type: DataTypes.ENUM('Pending', 'Synced', 'Error'),
+    defaultValue: 'Pending'
   }
 }, {
-  timestamps: true
+  tableName: 'nemsis_records'
 });
 
-// Indexes for better performance
-nemsisSchema.index({ recordId: 1 });
-nemsisSchema.index({ 'incident.incidentNumber': 1 });
-nemsisSchema.index({ 'incident.incidentDate': 1 });
-nemsisSchema.index({ createdBy: 1 });
-nemsisSchema.index({ syncStatus: 1 });
-
-module.exports = mongoose.model('NemsisRecord', nemsisSchema);
+module.exports = NemsisRecord;

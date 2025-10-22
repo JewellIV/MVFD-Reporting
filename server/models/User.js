@@ -1,89 +1,105 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database');
 const bcrypt = require('bcryptjs');
 
-const userSchema = new mongoose.Schema({
+const User = sequelize.define('User', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
   username: {
-    type: String,
-    required: true,
+    type: DataTypes.STRING(30),
+    allowNull: false,
     unique: true,
-    trim: true,
-    minlength: 3,
-    maxlength: 30
+    validate: {
+      len: [3, 30]
+    }
   },
   email: {
-    type: String,
-    required: true,
+    type: DataTypes.STRING(100),
+    allowNull: false,
     unique: true,
-    trim: true,
-    lowercase: true
+    validate: {
+      isEmail: true
+    }
   },
   password: {
-    type: String,
-    required: true,
-    minlength: 6
+    type: DataTypes.STRING(255),
+    allowNull: false,
+    validate: {
+      len: [6, 255]
+    }
   },
   firstName: {
-    type: String,
-    required: true,
-    trim: true
+    type: DataTypes.STRING(50),
+    allowNull: false
   },
   lastName: {
-    type: String,
-    required: true,
-    trim: true
+    type: DataTypes.STRING(50),
+    allowNull: false
   },
   role: {
-    type: String,
-    enum: ['admin', 'officer', 'firefighter', 'emt', 'paramedic'],
-    default: 'firefighter'
+    type: DataTypes.ENUM('admin', 'officer', 'firefighter', 'emt', 'paramedic'),
+    defaultValue: 'firefighter'
   },
   badgeNumber: {
-    type: String,
+    type: DataTypes.STRING(20),
     unique: true,
-    sparse: true
+    allowNull: true
   },
   department: {
-    type: String,
-    default: 'Mangohick Volunteer Fire Department'
+    type: DataTypes.STRING(100),
+    defaultValue: 'Mangohick Volunteer Fire Department'
   },
-  certifications: [{
-    type: String,
-    issueDate: Date,
-    expiryDate: Date,
-    issuingAuthority: String
-  }],
+  certifications: {
+    type: DataTypes.JSON
+  },
   isActive: {
-    type: Boolean,
-    default: true
+    type: DataTypes.BOOLEAN,
+    defaultValue: true
   },
-  lastLogin: Date,
-  googleId: String,
-  profilePicture: String
+  lastLogin: {
+    type: DataTypes.DATE
+  },
+  googleId: {
+    type: DataTypes.STRING(100)
+  },
+  profilePicture: {
+    type: DataTypes.STRING(255)
+  }
 }, {
-  timestamps: true
-});
-
-// Hash password before saving
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
-  try {
-    const salt = await bcrypt.genSalt(12);
-    this.password = await bcrypt.hash(this.password, salt);
-    next();
-  } catch (error) {
-    next(error);
+  tableName: 'users',
+  hooks: {
+    beforeCreate: async (user) => {
+      if (user.password) {
+        const salt = await bcrypt.genSalt(12);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
+    },
+    beforeUpdate: async (user) => {
+      if (user.changed('password')) {
+        const salt = await bcrypt.genSalt(12);
+        user.password = await bcrypt.hash(user.password, salt);
+      }
+    }
   }
 });
 
-// Compare password method
-userSchema.methods.comparePassword = async function(candidatePassword) {
+// Instance methods
+User.prototype.comparePassword = async function(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
-// Get full name
-userSchema.virtual('fullName').get(function() {
-  return `${this.firstName} ${this.lastName}`;
-});
+User.prototype.toJSON = function() {
+  const values = Object.assign({}, this.get());
+  delete values.password;
+  return values;
+};
 
-module.exports = mongoose.model('User', userSchema);
+// Virtual for full name
+User.prototype.getFullName = function() {
+  return `${this.firstName} ${this.lastName}`;
+};
+
+module.exports = User;

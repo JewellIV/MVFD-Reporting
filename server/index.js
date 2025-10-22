@@ -4,11 +4,8 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
-const connectDB = require('./config/database');
+const sequelize = require('./config/database');
 require('dotenv').config();
-
-// Connect to database
-connectDB();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -74,8 +71,25 @@ app.use('*', (req, res) => {
   res.status(404).json({ error: 'Route not found' });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚒 Mangohick Fire Reporting Server running on port ${PORT}`);
-  console.log(`📊 NEMSIS 3.5 & NFIRS/NERIS Reporting System`);
-  console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+// Database connection and server start
+async function startServer() {
+  try {
+    await sequelize.authenticate();
+    console.log('MySQL database connected successfully');
+    
+    // Sync database (create tables if they don't exist)
+    await sequelize.sync({ alter: true });
+    console.log('Database synchronized');
+    
+    app.listen(PORT, () => {
+      console.log(`🚒 Mangohick Fire Reporting Server running on port ${PORT}`);
+      console.log(`📊 NEMSIS 3.5 & NFIRS/NERIS Reporting System`);
+      console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
+  } catch (error) {
+    console.error('Unable to start server:', error);
+    process.exit(1);
+  }
+}
+
+startServer();

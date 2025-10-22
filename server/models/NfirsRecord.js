@@ -1,191 +1,74 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
+const sequelize = require('../config/database');
 
-const nfirsSchema = new mongoose.Schema({
-  // Basic Incident Information
-  incidentNumber: {
-    type: String,
-    required: true,
+const NfirsRecord = sequelize.define('NfirsRecord', {
+  id: {
+    type: DataTypes.INTEGER,
+    primaryKey: true,
+    autoIncrement: true
+  },
+  recordId: {
+    type: DataTypes.STRING(50),
+    allowNull: false,
     unique: true
   },
-  incidentDate: {
-    type: Date,
-    required: true
+  incidentNumber: {
+    type: DataTypes.STRING(50),
+    allowNull: false
   },
-  alarmTime: Date,
-  arrivalTime: Date,
-  controlledTime: Date,
-  lastUnitClearedTime: Date,
-  
-  // Location Information
-  location: {
-    address: String,
-    city: String,
-    state: {
-      type: String,
-      default: 'VA'
-    },
-    zipCode: String,
-    county: String,
-    latitude: Number,
-    longitude: Number,
-    censusTract: String,
-    fireDistrict: String
+  basic: {
+    type: DataTypes.JSON
   },
-
-  // Incident Type and Classification
-  incidentType: {
-    type: String,
-    required: true
-  },
-  incidentTypeCode: String,
-  actionTaken: [String],
-  suppressionApparatus: [{
-    apparatusId: String,
-    apparatusType: String,
-    responseTime: Number,
-    arrivalTime: Date
-  }],
-
-  // Fire Information
   fire: {
-    fireSpread: String,
-    flameHeight: String,
-    heatLevel: String,
-    smokeColor: String,
-    smokeDensity: String,
-    windDirection: String,
-    windSpeed: Number,
-    weatherConditions: String,
-    temperature: Number,
-    humidity: Number
+    type: DataTypes.JSON
   },
-
-  // Property Information
-  property: {
-    propertyUse: String,
-    propertyUseCode: String,
-    structureType: String,
-    structureStatus: String,
-    constructionType: String,
-    stories: Number,
-    squareFootage: Number,
-    yearBuilt: Number,
-    sprinklerSystem: Boolean,
-    smokeDetector: Boolean,
-    alarmSystem: Boolean
+  structureFire: {
+    type: DataTypes.JSON
   },
-
-  // Loss Information
-  loss: {
-    propertyLoss: Number,
-    contentLoss: Number,
-    totalLoss: Number,
-    propertyValue: Number,
-    contentValue: Number,
-    totalValue: Number,
-    lossOfLife: {
-      civilian: Number,
-      firefighter: Number
-    },
-    injuries: {
-      civilian: Number,
-      firefighter: Number
-    }
+  civilianCasualty: {
+    type: DataTypes.JSON
   },
-
-  // Cause Information
-  cause: {
-    cause: String,
-    causeCode: String,
-    humanFactor: String,
-    equipmentInvolved: String,
-    factorContributing: [String],
-    investigationStatus: String,
-    investigator: String
+  fireServiceCasualty: {
+    type: DataTypes.JSON
   },
-
-  // Personnel Information
-  personnel: [{
-    memberId: String,
-    name: String,
-    rank: String,
-    assignment: String,
-    timeOnScene: Number,
-    injuries: Boolean,
-    injuryDescription: String
-  }],
-
-  // Apparatus Information
-  apparatus: [{
-    apparatusId: String,
-    apparatusType: String,
-    responseTime: Number,
-    arrivalTime: Date,
-    clearTime: Date,
-    mileage: Number,
-    fuelUsed: Number
-  }],
-
-  // Mutual Aid
-  mutualAid: [{
-    department: String,
-    apparatus: String,
-    personnel: Number,
-    responseTime: Number
-  }],
-
-  // Narrative
-  narrative: {
-    incidentDescription: String,
-    actionsTaken: String,
-    specialCircumstances: String,
-    lessonsLearned: String
+  hazmat: {
+    type: DataTypes.JSON
   },
-
-  // Quality Assurance
+  wildland: {
+    type: DataTypes.JSON
+  },
   quality: {
-    dataCompleteness: Number,
-    validationErrors: [String],
-    reviewedBy: String,
-    reviewDate: Date,
-    status: {
-      type: String,
-      enum: ['Draft', 'Pending Review', 'Approved', 'Rejected'],
-      default: 'Draft'
-    }
+    type: DataTypes.JSON
   },
-
-  // Metadata
   createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   },
   lastModifiedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+    type: DataTypes.INTEGER,
+    references: {
+      model: 'users',
+      key: 'id'
+    }
   },
   version: {
-    type: Number,
-    default: 1
+    type: DataTypes.INTEGER,
+    defaultValue: 1
   },
   isOffline: {
-    type: Boolean,
-    default: false
+    type: DataTypes.BOOLEAN,
+    defaultValue: false
   },
   syncStatus: {
-    type: String,
-    enum: ['Pending', 'Synced', 'Error'],
-    default: 'Pending'
+    type: DataTypes.ENUM('Pending', 'Synced', 'Error'),
+    defaultValue: 'Pending'
   }
 }, {
-  timestamps: true
+  tableName: 'nfirs_records'
 });
 
-// Indexes
-nfirsSchema.index({ incidentNumber: 1 });
-nfirsSchema.index({ incidentDate: 1 });
-nfirsSchema.index({ createdBy: 1 });
-nfirsSchema.index({ syncStatus: 1 });
-
-module.exports = mongoose.model('NfirsRecord', nfirsSchema);
+module.exports = NfirsRecord;

@@ -1,5 +1,7 @@
 # Mangohick Volunteer Fire Department Reporting System
 
+**🌐 Production URL:** https://reporting.mangohickfire.com
+
 A comprehensive, enterprise-grade incident reporting platform built for Virginia public safety agencies, featuring full NEMSIS 3.5 and NFIRS/NERIS compliance with advanced offline capabilities, CAD integration, and state/federal data submission.
 
 ## 🚒 System Overview

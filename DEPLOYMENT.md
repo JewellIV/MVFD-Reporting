@@ -8,7 +8,7 @@ This guide covers deploying the Mangohick Fire Reporting System to production en
 
 ### System Requirements
 - **Node.js**: 18.x or higher
-- **MongoDB**: 5.0 or higher (Atlas recommended for production)
+- **MySQL**: 8.0 or higher (hosted database recommended)
 - **Memory**: Minimum 4GB RAM, 8GB recommended
 - **Storage**: Minimum 100GB SSD, 500GB recommended
 - **CPU**: 2+ cores, 4+ cores recommended
@@ -19,7 +19,7 @@ This guide covers deploying the Mangohick Fire Reporting System to production en
 - **Google Cloud Platform** (with government compliance features)
 
 ### External Services
-- **MongoDB Atlas** (or self-hosted MongoDB)
+- **MySQL Database** (hosted at sdb-86.hosting.stackcp.net)
 - **Google Cloud Platform** (for Google integration)
 - **Virginia VPHIB API** credentials
 - **Virginia VDFP API** credentials
@@ -32,8 +32,12 @@ This guide covers deploying the Mangohick Fire Reporting System to production en
 Create a `.env` file in the server directory:
 
 ```bash
-# Database
-MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/mangohick-fire?retryWrites=true&w=majority
+# Database - MySQL
+DB_HOST=sdb-86.hosting.stackcp.net
+DB_PORT=3306
+DB_NAME=Reporting-35313030ad32
+DB_USER=Reporting-35313030ad32
+DB_PASSWORD=T43$cK6Q!Mr$
 
 # JWT Configuration
 JWT_SECRET=your-super-secure-jwt-secret-key-here
@@ -76,7 +80,7 @@ HEALTH_CHECK_INTERVAL=300000
 LOG_LEVEL=info
 
 # Security
-CORS_ORIGIN=https://yourdomain.com
+CORS_ORIGIN=https://reporting.mangohickfire.com
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=100
 
@@ -90,7 +94,7 @@ PWA_CACHE_STRATEGY=networkFirst
 Create a `.env` file in the client directory:
 
 ```bash
-REACT_APP_API_URL=https://api.yourdomain.com
+REACT_APP_API_URL=https://reporting.mangohickfire.com/api
 REACT_APP_GOOGLE_CLIENT_ID=your-google-client-id
 REACT_APP_MAPS_API_KEY=your-google-maps-api-key
 REACT_APP_PWA_ENABLED=true
@@ -169,22 +173,6 @@ Create `docker-compose.yml`:
 version: '3.8'
 
 services:
-  mongodb:
-    image: mongo:5.0
-    container_name: mangohick-mongodb
-    restart: unless-stopped
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: admin
-      MONGO_INITDB_ROOT_PASSWORD: your-mongodb-password
-      MONGO_INITDB_DATABASE: mangohick-fire
-    volumes:
-      - mongodb_data:/data/db
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-    ports:
-      - "27017:27017"
-    networks:
-      - mangohick-network
-
   server:
     build:
       context: .
@@ -193,14 +181,16 @@ services:
     restart: unless-stopped
     environment:
       - NODE_ENV=production
-      - MONGODB_URI=mongodb://admin:your-mongodb-password@mongodb:27017/mangohick-fire?authSource=admin
+      - DB_HOST=sdb-86.hosting.stackcp.net
+      - DB_PORT=3306
+      - DB_NAME=Reporting-35313030ad32
+      - DB_USER=Reporting-35313030ad32
+      - DB_PASSWORD=T43$cK6Q!Mr$
     volumes:
       - uploads_data:/var/uploads
       - backups_data:/var/backups
     ports:
       - "5000:5000"
-    depends_on:
-      - mongodb
     networks:
       - mangohick-network
 
@@ -234,7 +224,6 @@ services:
       - mangohick-network
 
 volumes:
-  mongodb_data:
   uploads_data:
   backups_data:
 
@@ -273,13 +262,13 @@ networks:
    ```nginx
    server {
        listen 80;
-       server_name yourdomain.com;
+       server_name reporting.mangohickfire.com;
        return 301 https://$server_name$request_uri;
    }
 
    server {
        listen 443 ssl http2;
-       server_name yourdomain.com;
+       server_name reporting.mangohickfire.com;
 
        ssl_certificate /etc/nginx/ssl/cert.pem;
        ssl_certificate_key /etc/nginx/ssl/key.pem;
@@ -305,7 +294,7 @@ networks:
 
 5. **Setup SSL Certificate:**
    ```bash
-   sudo certbot --nginx -d yourdomain.com
+   sudo certbot --nginx -d reporting.mangohickfire.com
    ```
 
 6. **Configure Systemd Services:**

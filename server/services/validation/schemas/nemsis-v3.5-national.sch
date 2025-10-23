@@ -80,6 +80,101 @@
     </assert>
   </rule>
 
+  <!-- Rule: Vital signs validation -->
+  <rule context="//nemsis:VitalSigns">
+    <assert test="not(nemsis:eVital.01) or (nemsis:eVital.01 >= 0 and nemsis:eVital.01 <= 300)" severity="warning">
+      Systolic blood pressure should be between 0 and 300 mmHg
+    </assert>
+    <assert test="not(nemsis:eVital.02) or (nemsis:eVital.02 >= 0 and nemsis:eVital.02 <= 200)" severity="warning">
+      Diastolic blood pressure should be between 0 and 200 mmHg
+    </assert>
+    <assert test="not(nemsis:eVital.03) or (nemsis:eVital.03 >= 0 and nemsis:eVital.03 <= 300)" severity="warning">
+      Heart rate should be between 0 and 300 bpm
+    </assert>
+    <assert test="not(nemsis:eVital.04) or (nemsis:eVital.04 >= 0 and nemsis:eVital.04 <= 100)" severity="warning">
+      Respiratory rate should be between 0 and 100 breaths/min
+    </assert>
+    <assert test="not(nemsis:eVital.05) or (nemsis:eVital.05 >= 80 and nemsis:eVital.05 <= 120)" severity="warning">
+      Temperature should be between 80 and 120 degrees Fahrenheit
+    </assert>
+    <assert test="not(nemsis:eVital.06) or (nemsis:eVital.06 >= 0 and nemsis:eVital.06 <= 100)" severity="warning">
+      Oxygen saturation should be between 0 and 100%
+    </assert>
+    <assert test="not(nemsis:eVital.07) or (nemsis:eVital.07 >= 3 and nemsis:eVital.07 <= 15)" severity="warning">
+      Glasgow Coma Scale should be between 3 and 15
+    </assert>
+    <assert test="not(nemsis:eVital.08) or (nemsis:eVital.08 >= 0 and nemsis:eVital.08 <= 10)" severity="warning">
+      Pain scale should be between 0 and 10
+    </assert>
+  </rule>
+
+  <!-- Rule: Blood pressure validation -->
+  <rule context="//nemsis:VitalSigns[nemsis:eVital.01 and nemsis:eVital.02]">
+    <assert test="nemsis:eVital.01 > nemsis:eVital.02" severity="error">
+      Systolic blood pressure must be greater than diastolic blood pressure
+    </assert>
+  </rule>
+
+  <!-- Rule: Medication validation -->
+  <rule context="//nemsis:Medication">
+    <assert test="nemsis:eMedication.01" severity="warning">
+      Medication name is recommended
+    </assert>
+    <assert test="nemsis:eMedication.02" severity="warning">
+      Medication dose is recommended
+    </assert>
+    <assert test="nemsis:eMedication.03" severity="warning">
+      Medication route is recommended
+    </assert>
+  </rule>
+
+  <!-- Rule: Procedure validation -->
+  <rule context="//nemsis:Procedure">
+    <assert test="nemsis:eProcedure.01" severity="warning">
+      Procedure name is recommended
+    </assert>
+    <assert test="nemsis:eProcedure.02" severity="warning">
+      Procedure time is recommended
+    </assert>
+  </rule>
+
+  <!-- Rule: Crew validation -->
+  <rule context="//nemsis:Crew">
+    <assert test="nemsis:eCrew.01" severity="warning">
+      Crew member name is recommended
+    </assert>
+    <assert test="nemsis:eCrew.02" severity="warning">
+      Crew member role is recommended
+    </assert>
+  </rule>
+
+  <!-- Rule: Vehicle validation -->
+  <rule context="//nemsis:Vehicle">
+    <assert test="nemsis:eVehicle.01" severity="warning">
+      Vehicle unit ID is recommended
+    </assert>
+    <assert test="nemsis:eVehicle.02" severity="warning">
+      Vehicle type is recommended
+    </assert>
+  </rule>
+
+  <!-- Rule: Injury validation -->
+  <rule context="//nemsis:Injury">
+    <assert test="nemsis:eInjury.01" severity="warning">
+      Injury type is recommended
+    </assert>
+    <assert test="nemsis:eInjury.02" severity="warning">
+      Injury mechanism is recommended
+    </assert>
+  </rule>
+
+  <!-- Rule: Outcome validation -->
+  <rule context="//nemsis:Outcome">
+    <assert test="nemsis:eOutcome.01" severity="warning">
+      Patient outcome is recommended
+    </assert>
+  </rule>
+
   <!-- Rule: Clinical assessment validation -->
   <rule context="//nemsis:Clinical">
     <assert test="nemsis:eClinical.01" severity="warning">

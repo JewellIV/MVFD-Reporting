@@ -14,72 +14,124 @@
         <xs:element name="Clinical" type="ClinicalType" minOccurs="0" maxOccurs="1"/>
         <xs:element name="Disposition" type="DispositionType" minOccurs="0" maxOccurs="1"/>
         <xs:element name="Transport" type="TransportType" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="Crew" type="CrewType" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="Vehicle" type="VehicleType" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="Injury" type="InjuryType" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="VitalSigns" type="VitalSignsType" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="Medication" type="MedicationType" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="Procedure" type="ProcedureType" minOccurs="0" maxOccurs="1"/>
+        <xs:element name="Outcome" type="OutcomeType" minOccurs="0" maxOccurs="1"/>
       </xs:sequence>
     </xs:complexType>
   </xs:element>
 
-  <!-- Response Type -->
+  <!-- Response Type - NEMSIS 3.5 -->
   <xs:complexType name="ResponseType">
     <xs:sequence>
-      <xs:element name="eResponse.01" type="xs:string" minOccurs="1" maxOccurs="1"/>
-      <xs:element name="eResponse.02" type="xs:string" minOccurs="1" maxOccurs="1"/>
-      <xs:element name="eResponse.03" type="xs:dateTime" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eResponse.04" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eResponse.05" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eResponse.06" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eResponse.07" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eResponse.08" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eResponse.09" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eResponse.10" type="xs:string" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="eResponse.01" type="xs:string" minOccurs="1" maxOccurs="1"/> <!-- Agency Number -->
+      <xs:element name="eResponse.02" type="xs:string" minOccurs="1" maxOccurs="1"/> <!-- Incident Number -->
+      <xs:element name="eResponse.03" type="xs:dateTime" minOccurs="0" maxOccurs="1"/> <!-- Response Date/Time -->
+      <xs:element name="eResponse.04" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Incident Type -->
+      <xs:element name="eResponse.05" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Response Mode -->
+      <xs:element name="eResponse.06" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- City -->
+      <xs:element name="eResponse.07" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- State -->
+      <xs:element name="eResponse.08" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Zip Code -->
+      <xs:element name="eResponse.09" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- County -->
+      <xs:element name="eResponse.10" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Response Level -->
+      <xs:element name="eResponse.11" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Response Priority -->
+      <xs:element name="eResponse.12" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Response Status -->
+      <xs:element name="eResponse.13" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Response Reason -->
+      <xs:element name="eResponse.14" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Response Location -->
+      <xs:element name="eResponse.15" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Response Distance -->
     </xs:sequence>
   </xs:complexType>
 
-  <!-- Times Type -->
+  <!-- Times Type - NEMSIS 3.5 -->
   <xs:complexType name="TimesType">
     <xs:sequence>
-      <xs:element name="eTimes.01" type="xs:dateTime" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eTimes.02" type="xs:dateTime" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eTimes.03" type="xs:dateTime" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eTimes.04" type="xs:dateTime" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eTimes.05" type="xs:dateTime" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="eTimes.01" type="xs:dateTime" minOccurs="0" maxOccurs="1"/> <!-- Dispatch Date/Time -->
+      <xs:element name="eTimes.02" type="xs:dateTime" minOccurs="0" maxOccurs="1"/> <!-- En Route Date/Time -->
+      <xs:element name="eTimes.03" type="xs:dateTime" minOccurs="0" maxOccurs="1"/> <!-- Arrival Date/Time -->
+      <xs:element name="eTimes.04" type="xs:dateTime" minOccurs="0" maxOccurs="1"/> <!-- Clear Date/Time -->
+      <xs:element name="eTimes.05" type="xs:dateTime" minOccurs="0" maxOccurs="1"/> <!-- Transport Date/Time -->
+      <xs:element name="eTimes.06" type="xs:dateTime" minOccurs="0" maxOccurs="1"/> <!-- Hospital Arrival Date/Time -->
+      <xs:element name="eTimes.07" type="xs:dateTime" minOccurs="0" maxOccurs="1"/> <!-- Hospital Departure Date/Time -->
+      <xs:element name="eTimes.08" type="xs:dateTime" minOccurs="0" maxOccurs="1"/> <!-- Back in Service Date/Time -->
+      <xs:element name="eTimes.09" type="xs:dateTime" minOccurs="0" maxOccurs="1"/> <!-- Patient Contact Date/Time -->
+      <xs:element name="eTimes.10" type="xs:dateTime" minOccurs="0" maxOccurs="1"/> <!-- Patient Care Date/Time -->
     </xs:sequence>
   </xs:complexType>
 
-  <!-- Patient Type -->
+  <!-- Patient Type - NEMSIS 3.5 -->
   <xs:complexType name="PatientType">
     <xs:sequence>
-      <xs:element name="ePatient.01" type="xs:integer" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="ePatient.02" type="GenderType" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="ePatient.03" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="ePatient.04" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="ePatient.05" type="xs:decimal" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="ePatient.06" type="xs:decimal" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="ePatient.07" type="xs:date" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="ePatient.08" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="ePatient.09" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="ePatient.10" type="xs:string" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="ePatient.01" type="xs:integer" minOccurs="0" maxOccurs="1"/> <!-- Patient Age -->
+      <xs:element name="ePatient.02" type="GenderType" minOccurs="0" maxOccurs="1"/> <!-- Patient Gender -->
+      <xs:element name="ePatient.03" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Patient Race -->
+      <xs:element name="ePatient.04" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Patient Ethnicity -->
+      <xs:element name="ePatient.05" type="xs:decimal" minOccurs="0" maxOccurs="1"/> <!-- Patient Weight -->
+      <xs:element name="ePatient.06" type="xs:decimal" minOccurs="0" maxOccurs="1"/> <!-- Patient Height -->
+      <xs:element name="ePatient.07" type="xs:date" minOccurs="0" maxOccurs="1"/> <!-- Patient Date of Birth -->
+      <xs:element name="ePatient.08" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Patient Name -->
+      <xs:element name="ePatient.09" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Patient Address -->
+      <xs:element name="ePatient.10" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Patient Phone -->
+      <xs:element name="ePatient.11" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Patient Insurance -->
+      <xs:element name="ePatient.12" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Patient Medical History -->
+      <xs:element name="ePatient.13" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Patient Medications -->
+      <xs:element name="ePatient.14" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Patient Allergies -->
+      <xs:element name="ePatient.15" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Patient Chief Complaint -->
     </xs:sequence>
   </xs:complexType>
 
-  <!-- Clinical Type -->
+  <!-- Clinical Type - NEMSIS 3.5 -->
   <xs:complexType name="ClinicalType">
     <xs:sequence>
-      <xs:element name="eClinical.01" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eClinical.02" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eClinical.03" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eClinical.04" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eClinical.05" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eClinical.06" type="xs:string" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="eClinical.01" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Chief Complaint -->
+      <xs:element name="eClinical.02" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Primary Impression -->
+      <xs:element name="eClinical.03" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Secondary Impression -->
+      <xs:element name="eClinical.04" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Clinical Assessment -->
+      <xs:element name="eClinical.05" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Treatment Plan -->
+      <xs:element name="eClinical.06" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Clinical Notes -->
+      <xs:element name="eClinical.07" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Pain Scale -->
+      <xs:element name="eClinical.08" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Glasgow Coma Scale -->
+      <xs:element name="eClinical.09" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Mental Status -->
+      <xs:element name="eClinical.10" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Neurological Assessment -->
     </xs:sequence>
   </xs:complexType>
 
-  <!-- Disposition Type (NEMSIS v3.5) -->
+  <!-- Disposition Type - NEMSIS 3.5 -->
   <xs:complexType name="DispositionType">
     <xs:sequence>
-      <xs:element name="eDisposition.27" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eDisposition.28" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eDisposition.29" type="xs:string" minOccurs="0" maxOccurs="1"/>
-      <xs:element name="eDisposition.30" type="xs:string" minOccurs="0" maxOccurs="1"/>
+      <xs:element name="eDisposition.01" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Patient Disposition -->
+      <xs:element name="eDisposition.02" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Transport Mode -->
+      <xs:element name="eDisposition.03" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination -->
+      <xs:element name="eDisposition.04" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Type -->
+      <xs:element name="eDisposition.05" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Name -->
+      <xs:element name="eDisposition.06" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Address -->
+      <xs:element name="eDisposition.07" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination City -->
+      <xs:element name="eDisposition.08" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination State -->
+      <xs:element name="eDisposition.09" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Zip -->
+      <xs:element name="eDisposition.10" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination County -->
+      <xs:element name="eDisposition.11" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Phone -->
+      <xs:element name="eDisposition.12" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Level -->
+      <xs:element name="eDisposition.13" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Specialty -->
+      <xs:element name="eDisposition.14" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Trauma -->
+      <xs:element name="eDisposition.15" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Stroke -->
+      <xs:element name="eDisposition.16" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Cardiac -->
+      <xs:element name="eDisposition.17" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Pediatric -->
+      <xs:element name="eDisposition.18" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Burn -->
+      <xs:element name="eDisposition.19" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Psychiatric -->
+      <xs:element name="eDisposition.20" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Obstetric -->
+      <xs:element name="eDisposition.21" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Neonatal -->
+      <xs:element name="eDisposition.22" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Other -->
+      <xs:element name="eDisposition.23" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Other Text -->
+      <xs:element name="eDisposition.24" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Distance -->
+      <xs:element name="eDisposition.25" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Time -->
+      <xs:element name="eDisposition.26" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Destination Reason -->
+      <xs:element name="eDisposition.27" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Unit Disposition -->
+      <xs:element name="eDisposition.28" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Patient Evaluation/Care -->
+      <xs:element name="eDisposition.29" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Crew Disposition -->
+      <xs:element name="eDisposition.30" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Transport Disposition -->
     </xs:sequence>
   </xs:complexType>
 
@@ -93,6 +145,99 @@
       <xs:element name="eTransport.05" type="xs:dateTime" minOccurs="0" maxOccurs="1"/>
       <xs:element name="eTransport.06" type="xs:dateTime" minOccurs="0" maxOccurs="1"/>
       <xs:element name="eTransport.07" type="xs:string" minOccurs="0" maxOccurs="1"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Transport Type - NEMSIS 3.5 -->
+  <xs:complexType name="TransportType">
+    <xs:sequence>
+      <xs:element name="eTransport.01" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Transport Mode -->
+      <xs:element name="eTransport.02" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Transport Priority -->
+      <xs:element name="eTransport.03" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Transport Reason -->
+      <xs:element name="eTransport.04" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Transport Distance -->
+      <xs:element name="eTransport.05" type="xs:dateTime" minOccurs="0" maxOccurs="1"/> <!-- Transport Start Time -->
+      <xs:element name="eTransport.06" type="xs:dateTime" minOccurs="0" maxOccurs="1"/> <!-- Transport End Time -->
+      <xs:element name="eTransport.07" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Transport Notes -->
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Crew Type - NEMSIS 3.5 -->
+  <xs:complexType name="CrewType">
+    <xs:sequence>
+      <xs:element name="eCrew.01" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Crew Member Name -->
+      <xs:element name="eCrew.02" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Crew Member Role -->
+      <xs:element name="eCrew.03" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Crew Member Certification -->
+      <xs:element name="eCrew.04" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Crew Member License -->
+      <xs:element name="eCrew.05" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Crew Member Badge -->
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Vehicle Type - NEMSIS 3.5 -->
+  <xs:complexType name="VehicleType">
+    <xs:sequence>
+      <xs:element name="eVehicle.01" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Vehicle Unit ID -->
+      <xs:element name="eVehicle.02" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Vehicle Type -->
+      <xs:element name="eVehicle.03" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Vehicle Level -->
+      <xs:element name="eVehicle.04" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Vehicle Equipment -->
+      <xs:element name="eVehicle.05" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Vehicle Status -->
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Injury Type - NEMSIS 3.5 -->
+  <xs:complexType name="InjuryType">
+    <xs:sequence>
+      <xs:element name="eInjury.01" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Injury Type -->
+      <xs:element name="eInjury.02" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Injury Mechanism -->
+      <xs:element name="eInjury.03" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Injury Location -->
+      <xs:element name="eInjury.04" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Injury Severity -->
+      <xs:element name="eInjury.05" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Injury Description -->
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Vital Signs Type - NEMSIS 3.5 -->
+  <xs:complexType name="VitalSignsType">
+    <xs:sequence>
+      <xs:element name="eVital.01" type="xs:decimal" minOccurs="0" maxOccurs="1"/> <!-- Systolic Blood Pressure -->
+      <xs:element name="eVital.02" type="xs:decimal" minOccurs="0" maxOccurs="1"/> <!-- Diastolic Blood Pressure -->
+      <xs:element name="eVital.03" type="xs:integer" minOccurs="0" maxOccurs="1"/> <!-- Heart Rate -->
+      <xs:element name="eVital.04" type="xs:integer" minOccurs="0" maxOccurs="1"/> <!-- Respiratory Rate -->
+      <xs:element name="eVital.05" type="xs:decimal" minOccurs="0" maxOccurs="1"/> <!-- Temperature -->
+      <xs:element name="eVital.06" type="xs:integer" minOccurs="0" maxOccurs="1"/> <!-- Oxygen Saturation -->
+      <xs:element name="eVital.07" type="xs:integer" minOccurs="0" maxOccurs="1"/> <!-- Glasgow Coma Scale -->
+      <xs:element name="eVital.08" type="xs:integer" minOccurs="0" maxOccurs="1"/> <!-- Pain Scale -->
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Medication Type - NEMSIS 3.5 -->
+  <xs:complexType name="MedicationType">
+    <xs:sequence>
+      <xs:element name="eMedication.01" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Medication Name -->
+      <xs:element name="eMedication.02" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Medication Dose -->
+      <xs:element name="eMedication.03" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Medication Route -->
+      <xs:element name="eMedication.04" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Medication Time -->
+      <xs:element name="eMedication.05" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Medication Response -->
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Procedure Type - NEMSIS 3.5 -->
+  <xs:complexType name="ProcedureType">
+    <xs:sequence>
+      <xs:element name="eProcedure.01" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Procedure Name -->
+      <xs:element name="eProcedure.02" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Procedure Time -->
+      <xs:element name="eProcedure.03" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Procedure Success -->
+      <xs:element name="eProcedure.04" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Procedure Complications -->
+      <xs:element name="eProcedure.05" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Procedure Notes -->
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Outcome Type - NEMSIS 3.5 -->
+  <xs:complexType name="OutcomeType">
+    <xs:sequence>
+      <xs:element name="eOutcome.01" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Patient Outcome -->
+      <xs:element name="eOutcome.02" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Treatment Outcome -->
+      <xs:element name="eOutcome.03" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Discharge Status -->
+      <xs:element name="eOutcome.04" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Follow-up Required -->
+      <xs:element name="eOutcome.05" type="xs:string" minOccurs="0" maxOccurs="1"/> <!-- Outcome Notes -->
     </xs:sequence>
   </xs:complexType>
 

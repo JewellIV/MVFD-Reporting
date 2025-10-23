@@ -58,6 +58,97 @@
     </assert>
   </rule>
 
+  <!-- Rule: Virginia-specific vital signs validation -->
+  <rule context="//nemsis:VitalSigns">
+    <assert test="not(nemsis:eVital.01) or (nemsis:eVital.01 >= 0 and nemsis:eVital.01 <= 300)" severity="warning">
+      Systolic blood pressure should be between 0 and 300 mmHg for Virginia reporting
+    </assert>
+    <assert test="not(nemsis:eVital.02) or (nemsis:eVital.02 >= 0 and nemsis:eVital.02 <= 200)" severity="warning">
+      Diastolic blood pressure should be between 0 and 200 mmHg for Virginia reporting
+    </assert>
+    <assert test="not(nemsis:eVital.03) or (nemsis:eVital.03 >= 0 and nemsis:eVital.03 <= 300)" severity="warning">
+      Heart rate should be between 0 and 300 bpm for Virginia reporting
+    </assert>
+  </rule>
+
+  <!-- Rule: Virginia crew requirements -->
+  <rule context="//nemsis:Crew">
+    <assert test="nemsis:eCrew.01" severity="warning">
+      Crew member name is recommended for Virginia reporting
+    </assert>
+    <assert test="nemsis:eCrew.02" severity="warning">
+      Crew member role is recommended for Virginia reporting
+    </assert>
+    <assert test="nemsis:eCrew.03" severity="warning">
+      Crew member certification is recommended for Virginia reporting
+    </assert>
+  </rule>
+
+  <!-- Rule: Virginia vehicle requirements -->
+  <rule context="//nemsis:Vehicle">
+    <assert test="nemsis:eVehicle.01" severity="warning">
+      Vehicle unit ID is recommended for Virginia reporting
+    </assert>
+    <assert test="nemsis:eVehicle.02" severity="warning">
+      Vehicle type is recommended for Virginia reporting
+    </assert>
+    <assert test="nemsis:eVehicle.03" severity="warning">
+      Vehicle level is recommended for Virginia reporting
+    </assert>
+  </rule>
+
+  <!-- Rule: Virginia medication requirements -->
+  <rule context="//nemsis:Medication">
+    <assert test="nemsis:eMedication.01" severity="warning">
+      Medication name is recommended for Virginia reporting
+    </assert>
+    <assert test="nemsis:eMedication.02" severity="warning">
+      Medication dose is recommended for Virginia reporting
+    </assert>
+    <assert test="nemsis:eMedication.03" severity="warning">
+      Medication route is recommended for Virginia reporting
+    </assert>
+  </rule>
+
+  <!-- Rule: Virginia procedure requirements -->
+  <rule context="//nemsis:Procedure">
+    <assert test="nemsis:eProcedure.01" severity="warning">
+      Procedure name is recommended for Virginia reporting
+    </assert>
+    <assert test="nemsis:eProcedure.02" severity="warning">
+      Procedure time is recommended for Virginia reporting
+    </assert>
+    <assert test="nemsis:eProcedure.03" severity="warning">
+      Procedure success is recommended for Virginia reporting
+    </assert>
+  </rule>
+
+  <!-- Rule: Virginia injury requirements -->
+  <rule context="//nemsis:Injury">
+    <assert test="nemsis:eInjury.01" severity="warning">
+      Injury type is recommended for Virginia reporting
+    </assert>
+    <assert test="nemsis:eInjury.02" severity="warning">
+      Injury mechanism is recommended for Virginia reporting
+    </assert>
+    <assert test="nemsis:eInjury.03" severity="warning">
+      Injury location is recommended for Virginia reporting
+    </assert>
+  </rule>
+
+  <!-- Rule: Virginia outcome requirements -->
+  <rule context="//nemsis:Outcome">
+    <assert test="nemsis:eOutcome.01" severity="warning">
+      Patient outcome is recommended for Virginia reporting
+    </assert>
+    <assert test="nemsis:eOutcome.02" severity="warning">
+      Treatment outcome is recommended for Virginia reporting
+    </assert>
+    <assert test="nemsis:eOutcome.03" severity="warning">
+      Discharge status is recommended for Virginia reporting
+    </assert>
+  </rule>
+
   <!-- Rule: Dispatch time must be before arrival time -->
   <rule context="//nemsis:eTimes.01 and //nemsis:eTimes.03">
     <assert test="//nemsis:eTimes.01 &lt; //nemsis:eTimes.03" severity="error">

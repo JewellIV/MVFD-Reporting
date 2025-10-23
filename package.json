@@ -1,0 +1,20 @@
+{
+  "name": "mangohick-fire-reporting",
+  "version": "1.0.0",
+  "description": "NEMSIS 3.5 and NFIRS/NERIS reporting site for Mangohick Volunteer Fire Department",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm start",
+    "build": "cd client && npm run build",
+    "start": "cd server && npm start",
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "keywords": ["nemsis", "nfirs", "fire", "reporting", "epcrs", "cad"],
+  "author": "Mangohick Volunteer Fire Department",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

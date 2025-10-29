@@ -1,0 +1,10 @@
+FF:
+  active: 'TRUE'
+  description: Firefighter
+  definition: ''
+  source: ''
+NONFF:
+  active: 'TRUE'
+  description: Non-Firefighter
+  definition: ''
+  source: ''

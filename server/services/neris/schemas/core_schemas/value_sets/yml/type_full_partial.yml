@@ -1,0 +1,15 @@
+FULL:
+  active: 'TRUE'
+  description: Present - Full
+  definition: ''
+  source: ''
+PARTIAL:
+  active: 'TRUE'
+  description: Present - Partial
+  definition: ''
+  source: ''
+EXTENT_UNKNOWN:
+  active: 'TRUE'
+  description: Present - Extent Unknown
+  definition: ''
+  source: ''

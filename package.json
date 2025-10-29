@@ -9,7 +9,8 @@
     "client": "cd client && npm start",
     "build": "cd client && npm run build",
     "start": "cd server && npm start",
-    "install-all": "npm install && cd server && npm install && cd ../client && npm install"
+    "install-all": "npm install && cd server && npm install && cd ../client && npm install",
+    "test-neris": "node test-neris.js"
   },
   "keywords": ["nemsis", "nfirs", "fire", "reporting", "epcrs", "cad"],
   "author": "Mangohick Volunteer Fire Department",

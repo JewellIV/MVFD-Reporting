@@ -3,8 +3,22 @@ const { body, validationResult } = require('express-validator');
 const NerisRecord = require('../models/NerisRecord');
 const { auth, requireRole } = require('../middleware/auth');
 const VDFPIntegration = require('../services/virginia/VDFPIntegration');
+const NerisValidator = require('../services/neris/NerisValidator');
+const NerisSchemaService = require('../services/neris/NerisSchemaService');
+const DispatchCodeMappingService = require('../services/neris/DispatchCodeMappingService');
 
 const router = express.Router();
+
+// Initialize services
+router.use(async (req, res, next) => {
+  try {
+    await NerisSchemaService.initialize();
+    next();
+  } catch (error) {
+    console.error('Failed to initialize NERIS services:', error);
+    next(error);
+  }
+});
 
 // Get all NERIS records
 router.get('/', auth, async (req, res) => {
@@ -64,13 +78,56 @@ router.get('/:id', auth, async (req, res) => {
   }
 });
 
+// Get incident types
+router.get('/incident-types', auth, async (req, res) => {
+  try {
+    const incidentTypes = NerisSchemaService.getIncidentTypes();
+    res.json(incidentTypes);
+  } catch (error) {
+    console.error('Get incident types error:', error);
+    res.status(500).json({ error: 'Server error fetching incident types' });
+  }
+});
+
+// Get schema fields for a module
+router.get('/schema/:moduleType/:moduleName', auth, async (req, res) => {
+  try {
+    const { moduleType, moduleName } = req.params;
+    const module = NerisSchemaService.getModule(moduleType, moduleName);
+    
+    if (!module) {
+      return res.status(404).json({ error: 'Module not found' });
+    }
+    
+    res.json(module);
+  } catch (error) {
+    console.error('Get schema error:', error);
+    res.status(500).json({ error: 'Server error fetching schema' });
+  }
+});
+
+// Get value set
+router.get('/value-set/:setName', auth, async (req, res) => {
+  try {
+    const { setName } = req.params;
+    const valueSet = NerisSchemaService.getValueSet(setName);
+    
+    if (!valueSet || valueSet.length === 0) {
+      return res.status(404).json({ error: 'Value set not found' });
+    }
+    
+    res.json(valueSet);
+  } catch (error) {
+    console.error('Get value set error:', error);
+    res.status(500).json({ error: 'Server error fetching value set' });
+  }
+});
+
 // Create new NERIS record
 router.post('/', auth, [
-  body('core.incidentNumber').notEmpty().withMessage('Incident number is required'),
-  body('core.incidentDate').isISO8601().withMessage('Valid incident date is required'),
-  body('core.incidentTypes').isArray().withMessage('Incident types must be an array'),
-  body('location.coordinates.latitude').isNumeric().withMessage('Latitude is required'),
-  body('location.coordinates.longitude').isNumeric().withMessage('Longitude is required')
+  body('incident_internal_id').notEmpty().withMessage('Internal incident ID is required'),
+  body('incident_final_type').isArray().withMessage('Incident types must be an array'),
+  body('incident_location').isObject().withMessage('Incident location is required')
 ], async (req, res) => {
   try {
     const errors = validationResult(req);
@@ -78,23 +135,45 @@ router.post('/', auth, [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    // Check if incident number already exists
+    // Generate NERIS ID if not provided
+    if (!req.body.incident_neris_id) {
+      const timestamp = Date.now();
+      const departmentId = 'FD12029001'; // Mango Hick VFD
+      req.body.incident_neris_id = `${departmentId}:${timestamp}`;
+    }
+
+    // Check if incident already exists
     const existingRecord = await NerisRecord.findOne({ 
-      'core.incidentNumber': req.body.core.incidentNumber 
+      incident_internal_id: req.body.incident_internal_id 
     });
 
     if (existingRecord) {
-      return res.status(400).json({ error: 'Incident number already exists' });
+      return res.status(400).json({ error: 'Incident with this internal ID already exists' });
+    }
+
+    // Validate the record
+    const validator = new NerisValidator();
+    await validator.initialize();
+    const validation = await validator.validate(req.body);
+
+    if (!validation.valid) {
+      return res.status(400).json({
+        error: 'Validation failed',
+        validation
+      });
     }
 
     const recordData = {
       ...req.body,
-      createdBy: req.user._id,
-      agencyId: 'MANGOHICK-VFD-001'
+      quality: {
+        score: validation.score,
+        errors: validation.errors,
+        warnings: validation.warnings
+      },
+      createdBy: req.user.id
     };
 
-    const record = new NerisRecord(recordData);
-    await record.save();
+    const record = await NerisRecord.create(recordData);
 
     res.status(201).json(record);
   } catch (error) {
@@ -207,6 +286,36 @@ router.post('/:id/review', auth, requireRole(['admin', 'officer']), [
   } catch (error) {
     console.error('Review NERIS record error:', error);
     res.status(500).json({ error: 'Server error reviewing record' });
+  }
+});
+
+// Validate NERIS record
+router.post('/:id/validate', auth, async (req, res) => {
+  try {
+    const record = await NerisRecord.findByPk(req.params.id);
+    
+    if (!record) {
+      return res.status(404).json({ error: 'Record not found' });
+    }
+    
+    // Run validation
+    const validator = new NerisValidator();
+    await validator.initialize();
+    const validation = await validator.validate(record.toJSON());
+    
+    // Update quality score
+    await record.update({
+      quality: {
+        score: validation.score,
+        errors: validation.errors,
+        warnings: validation.warnings
+      }
+    });
+    
+    res.json(validation);
+  } catch (error) {
+    console.error('Validate NERIS record error:', error);
+    res.status(500).json({ error: 'Server error validating record' });
   }
 });
 
@@ -394,5 +503,55 @@ function convertToCSV(records) {
   
   return csv;
 }
+
+// Dispatch code mapping endpoints
+router.get('/dispatch-mappings', auth, async (req, res) => {
+  try {
+    const departmentId = req.query.departmentId || req.user.departmentId;
+    const mappings = await DispatchCodeMappingService.getAllDispatchCodes(departmentId);
+    res.json(mappings);
+  } catch (error) {
+    console.error('Get dispatch mappings error:', error);
+    res.status(500).json({ error: 'Server error fetching dispatch mappings' });
+  }
+});
+
+router.post('/dispatch-mappings', auth, requireRole(['admin', 'officer']), async (req, res) => {
+  try {
+    const { dispatch_code, incident_type } = req.body;
+    const departmentId = req.user.departmentId;
+    
+    await DispatchCodeMappingService.addMapping(departmentId, dispatch_code, incident_type);
+    
+    res.json({ message: 'Dispatch code mapping added successfully' });
+  } catch (error) {
+    console.error('Add dispatch mapping error:', error);
+    res.status(500).json({ error: 'Server error adding dispatch mapping' });
+  }
+});
+
+router.delete('/dispatch-mappings/:dispatchCode', auth, requireRole(['admin', 'officer']), async (req, res) => {
+  try {
+    const { dispatchCode } = req.params;
+    const departmentId = req.user.departmentId;
+    
+    await DispatchCodeMappingService.deleteMapping(departmentId, dispatchCode);
+    
+    res.json({ message: 'Dispatch code mapping deleted successfully' });
+  } catch (error) {
+    console.error('Delete dispatch mapping error:', error);
+    res.status(500).json({ error: 'Server error deleting dispatch mapping' });
+  }
+});
+
+router.get('/dispatch-mappings/template', auth, async (req, res) => {
+  try {
+    const template = DispatchCodeMappingService.getTemplate();
+    res.json(template);
+  } catch (error) {
+    console.error('Get dispatch mapping template error:', error);
+    res.status(500).json({ error: 'Server error fetching template' });
+  }
+});
 
 module.exports = router;

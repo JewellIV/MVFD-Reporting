@@ -160,3 +160,4 @@ curl https://reporting.mangohickfire.com/api/neris/incident-types
 **Date**: Ready for Deployment  
 **Version**: NERIS Framework v1.0  
 **Database**: Auto-sync on startup
+

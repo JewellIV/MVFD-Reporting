@@ -348,3 +348,4 @@ class NerisSchemaService {
 }
 
 module.exports = new NerisSchemaService();
+

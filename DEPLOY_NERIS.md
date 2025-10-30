@@ -271,3 +271,4 @@ mysql -h sdb-86.hosting.stackcp.net -u Reporting-35313030ad32 -p -e "SHOW TABLES
 # Check NerisRecord table structure
 mysql -h sdb-86.hosting.stackcp.net -u Reporting-35313030ad32 -p -e "DESCRIBE Reporting-35313030ad32.neris_records"
 ```
+

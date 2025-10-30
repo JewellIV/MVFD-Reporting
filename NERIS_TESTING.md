@@ -248,3 +248,4 @@ npm install csv-parse js-yaml
 - `GET /api/neris/dispatch-mappings/template` - Get mapping template
 
 For more details, see the [NERIS Framework Documentation](https://github.com/ulfsri/neris-framework).
+

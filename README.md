@@ -109,6 +109,8 @@ This platform provides a unified solution for both Fire and Emergency Medical Se
    - AWS GovCloud (recommended for government compliance)
    - Azure Government
    - Google Cloud Platform
+   
+   **For cPanel/shared hosting**: See [CPANEL_DEPLOYMENT.md](CPANEL_DEPLOYMENT.md) for detailed instructions
 
 ## 📋 Compliance & Certification
 

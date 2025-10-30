@@ -3,8 +3,16 @@
  * Run this to verify the setup is working correctly
  */
 
-const NerisSchemaService = require('./server/services/neris/NerisSchemaService');
-const NerisValidator = require('./server/services/neris/NerisValidator');
+// Test NERIS Framework Implementation
+// This script verifies the NERIS framework is properly integrated
+
+const path = require('path');
+
+// Change to server directory to resolve module paths correctly
+process.chdir(path.join(__dirname, 'server'));
+
+const NerisSchemaService = require('./services/neris/NerisSchemaService');
+const NerisValidator = require('./services/neris/NerisValidator');
 
 async function testNERISSetup() {
   console.log('🧪 Testing NERIS Framework Implementation...\n');

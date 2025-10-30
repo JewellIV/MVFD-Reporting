@@ -12,7 +12,14 @@
     "install-all": "npm install && cd server && npm install && cd ../client && npm install",
     "test-neris": "node test-neris.js"
   },
-  "keywords": ["nemsis", "nfirs", "fire", "reporting", "epcrs", "cad"],
+  "keywords": [
+    "nemsis",
+    "nfirs",
+    "fire",
+    "reporting",
+    "epcrs",
+    "cad"
+  ],
   "author": "Mangohick Volunteer Fire Department",
   "license": "MIT",
   "devDependencies": {

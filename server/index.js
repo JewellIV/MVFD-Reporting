@@ -7,6 +7,121 @@ const rateLimit = require('express-rate-limit');
 const sequelize = require('./config/database');
 require('dotenv').config();
 
+// ===== CRITICAL FIX: MongoDB to Sequelize Compatibility Layer =====
+// This adds MongoDB-style methods to Sequelize models so routes can work
+const addMongooseCompatibility = () => {
+  const { Op } = require('sequelize');
+  const models = ['NerisRecord', 'NemsisRecord', 'NfirsRecord', 'User'];
+  
+  models.forEach(modelName => {
+    try {
+      const Model = require(`./models/${modelName}`);
+      
+      // Add .find() method (converts to .findAll()) with chainable methods
+      if (!Model.find) {
+        class QueryBuilder {
+          constructor(Model, query = {}) {
+            this.Model = Model;
+            this.sequelizeQuery = { where: {}, include: [] };
+            
+            // Convert MongoDB query to Sequelize
+            Object.keys(query).forEach(key => {
+              if (key === '_id') {
+                this.sequelizeQuery.where.id = query[key];
+              } else if (query[key] && typeof query[key] === 'object' && !Array.isArray(query[key])) {
+                // Handle operators like $gte, $lte
+                if (query[key].$gte) this.sequelizeQuery.where[key] = { [Op.gte]: query[key].$gte };
+                if (query[key].$lte) this.sequelizeQuery.where[key] = { [Op.lte]: query[key].$lte };
+              } else {
+                this.sequelizeQuery.where[key] = query[key];
+              }
+            });
+          }
+          
+          sort(fields) {
+            const field = Object.keys(fields)[0];
+            const direction = fields[field] === -1 ? 'DESC' : 'ASC';
+            this.sequelizeQuery.order = [[field, direction]];
+            return this;
+          }
+          
+          limit(num) {
+            this.sequelizeQuery.limit = num;
+            return this;
+          }
+          
+          skip(num) {
+            this.sequelizeQuery.offset = num;
+            return this;
+          }
+          
+          async populate() {
+            // populate() is a no-op for now - need proper associations
+            return this;
+          }
+          
+          async exec() {
+            return Model.findAll(this.sequelizeQuery);
+          }
+          
+          then(onFulfilled, onRejected) {
+            return this.exec().then(onFulfilled, onRejected);
+          }
+        }
+        
+        Model.find = function(query = {}) {
+          const builder = new QueryBuilder(Model, query);
+          return builder;
+        };
+      }
+      
+      // Add .countDocuments() method (converts to .count())
+      if (!Model.countDocuments) {
+        Model.countDocuments = function(query = {}) {
+          const where = {};
+          Object.keys(query).forEach(key => {
+            if (query[key] && typeof query[key] === 'object' && !Array.isArray(query[key])) {
+              if (query[key].$gte) where[key] = { [Op.gte]: query[key].$gte };
+              if (query[key].$lte) where[key] = { [Op.lte]: query[key].$lte };
+            } else {
+              where[key] = query[key];
+            }
+          });
+          return Model.count({ where });
+        };
+      }
+      
+      // Add .findById() method (converts to .findByPk())
+      if (!Model.findById) {
+        Model.findById = function(id) {
+          return Model.findByPk(id);
+        };
+      }
+      
+      // Add .findByIdAndDelete() method (converts to .destroy())
+      if (!Model.findByIdAndDelete) {
+        Model.findByIdAndDelete = function(id) {
+          return Model.destroy({ where: { id } });
+        };
+      }
+      
+      // Make .populate() a no-op for now (will need proper associations)
+      if (!Model.prototype.populate) {
+        Model.prototype.populate = function() {
+          return this;
+        };
+      }
+    } catch (err) {
+      console.warn(`Could not add compatibility to ${modelName}:`, err.message);
+    }
+  });
+  
+  console.log('✅ MongoDB compatibility layer added to Sequelize models');
+};
+
+addMongooseCompatibility();
+// ===== End of compatibility layer =====
+
 const app = express();
 const PORT = process.env.PORT || 5000;
 

@@ -72,6 +72,16 @@ CORS_ORIGIN=https://yourdomain.com
 
 ---
 
+## 🚨 Important Note
+
+**The critical deployment issue has been FIXED!**
+
+A MongoDB-to-Sequelize compatibility layer has been added to `server/index.js`. This allows your routes to work with the MySQL/Sequelize models.
+
+For details, see [CRITICAL_DEPLOYMENT_FIX.md](CRITICAL_DEPLOYMENT_FIX.md)
+
+---
+
 ## 📖 Full Guide
 
 See [CPANEL_DEPLOYMENT.md](CPANEL_DEPLOYMENT.md) for complete instructions

@@ -46,6 +46,8 @@ cPanel hosting has limitations, so here are your best options:
 
 This is best for your current setup with separate database hosting.
 
+**✅ CRITICAL FIX APPLIED**: A MongoDB-to-Sequelize compatibility layer has been added to fix deployment issues. See `CRITICAL_DEPLOYMENT_FIX.md` for details.
+
 ### **Part A: Deploy Frontend to cPanel**
 
 #### Step 1: Build the React App Locally
@@ -120,49 +122,20 @@ REACT_APP_API_URL=https://your-api-server.com/api
 
 Your backend needs to run continuously. Best options:
 
-#### **Option B1: Render.com (Free tier available)**
+#### **Option B1: Render.com (Recommended - Free tier available)**
 
-1. **Create Account**
-   - Go to https://render.com
-   - Sign up for free account
+**📖 Full guide**: See [RENDER_DEPLOYMENT_GUIDE.md](RENDER_DEPLOYMENT_GUIDE.md) for step-by-step instructions
 
-2. **Create Web Service**
-   - New → Web Service
-   - Connect your GitHub repo
-   - Select repository
-
-3. **Configure Build**
-   ```
-   Name: mangohick-api
-   Root Directory: server
-   Environment: Node
-   Build Command: npm install
-   Start Command: npm start
-   ```
-
-4. **Add Environment Variables**
-   
-   Copy from `server/production.env`:
-   ```
-   NODE_ENV=production
-   PORT=10000
-   DB_HOST=sdb-86.hosting.stackcp.net
-   DB_PORT=3306
-   DB_NAME=Reporting-35313030ad32
-   DB_USER=Reporting-35313030ad32
-   DB_PASSWORD=T43$cK6Q!Mr$
-   JWT_SECRET=MVFD2024SecureJWTSecretKeyForProductionUseOnly32+
-   JWT_EXPIRE=24h
-   ENCRYPTION_KEY=MVFD2024EncryptionKey32C
-   CORS_ORIGIN=https://reporting.mangohickfire.com
-   ```
-
-5. **Deploy**
-   - Render builds and deploys automatically
-   - Get URL: https://your-app.onrender.com
-
-6. **Update Frontend**
-   - In cPanel, update API URL to point to Render URL
+**Quick summary**:
+1. **Create Account** - Go to https://render.com
+2. **Create Web Service** - Connect GitHub repo
+3. **Configure**:
+   - Root Directory: `server`
+   - Build Command: `npm install`
+   - Start Command: `npm start`
+4. **Add Environment Variables** - See [RENDER_DEPLOYMENT_GUIDE.md](RENDER_DEPLOYMENT_GUIDE.md) for full list
+5. **Deploy** - Click "Create Web Service"
+6. **Update Frontend** - Point API URL to your Render URL
 
 #### **Option B2: Railway.app (Pay-as-you-go)**
 

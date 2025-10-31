@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -162,6 +163,16 @@ app.use('/api/analytics', require('./routes/analytics'));
 app.use('/api/backup', require('./routes/backup'));
 app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/health', require('./routes/health'));
+
+// Serve client build (optional)
+if (process.env.SERVE_CLIENT === 'true') {
+  const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
+  app.use(express.static(clientBuildPath));
+  // Send index.html for any non-API route
+  app.get(/^\/(?!api).*/, (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

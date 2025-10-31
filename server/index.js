@@ -189,17 +189,22 @@ app.use('*', (req, res) => {
 // Database connection and server start
 async function startServer() {
   try {
-    await sequelize.authenticate();
-    console.log('MySQL database connected successfully');
-    
-    // Sync database (create tables if they don't exist)
-    await sequelize.sync({ alter: true });
-    console.log('Database synchronized');
-    
+    if (process.env.DB_SKIP_INIT === 'true') {
+      console.warn('⚠️  DB initialization skipped due to DB_SKIP_INIT=true');
+    } else {
+      await sequelize.authenticate();
+      console.log('Database connected successfully');
+      await sequelize.sync({ alter: true });
+      console.log('Database synchronized');
+    }
+
     app.listen(PORT, () => {
       console.log(`🚒 Mangohick Fire Reporting Server running on port ${PORT}`);
       console.log(`📊 NEMSIS 3.5 & NFIRS/NERIS Reporting System`);
       console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+      if (process.env.DB_SKIP_INIT === 'true') {
+        console.log('⚠️  Running with DB initialization skipped');
+      }
     });
   } catch (error) {
     console.error('Unable to start server:', error);

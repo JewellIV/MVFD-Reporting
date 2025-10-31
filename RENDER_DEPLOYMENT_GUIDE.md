@@ -52,6 +52,7 @@ JWT_EXPIRE=24h
 ENCRYPTION_KEY=MVFD2024EncryptionKey32C
 CLIENT_URL=https://reporting.mangohickfire.com
 CORS_ORIGIN=https://reporting.mangohickfire.com
+SERVE_CLIENT=false
 ```
 
 **Note**: Change `CLIENT_URL` and `CORS_ORIGIN` to your actual domain!

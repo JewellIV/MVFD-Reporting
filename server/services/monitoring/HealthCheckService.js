@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const sequelize = require('../../config/database');
 const axios = require('axios');
 const fs = require('fs');
 const os = require('os');
@@ -10,16 +10,11 @@ class HealthCheckService {
   }
 
   registerDefaultChecks() {
-    // Database health check
+    // Database health check (MySQL via Sequelize)
     this.registerCheck('database', async () => {
       try {
-        const db = mongoose.connection;
-        if (db.readyState !== 1) {
-          return { status: 'unhealthy', message: 'Database not connected' };
-        }
-        
-        // Test database query
-        await db.db.admin().ping();
+        await sequelize.authenticate();
+        await sequelize.query('SELECT 1+1 AS result');
         return { status: 'healthy', message: 'Database connected' };
       } catch (error) {
         return { status: 'unhealthy', message: `Database error: ${error.message}` };
@@ -321,34 +316,38 @@ class HealthCheckService {
   // Get application metrics
   async getApplicationMetrics() {
     try {
-      const NemsisRecord = mongoose.model('NemsisRecord');
-      const NfirsRecord = mongoose.model('NfirsRecord');
-      const NerisRecord = mongoose.model('NerisRecord');
-      const User = mongoose.model('User');
-      
+      const NemsisRecord = require('../../models/NemsisRecord');
+      const NfirsRecord = require('../../models/NfirsRecord');
+      const NerisRecord = require('../../models/NerisRecord');
+      const User = require('../../models/User');
+
+      const [nemsis, nfirs, neris, usersTotal, usersActive] = await Promise.all([
+        NemsisRecord.count(),
+        NfirsRecord.count(),
+        NerisRecord.count(),
+        User.count(),
+        User.count({ where: { isActive: true } })
+      ]);
+
       const metrics = {
         records: {
-          nemsis: await NemsisRecord.countDocuments(),
-          nfirs: await NfirsRecord.countDocuments(),
-          neris: await NerisRecord.countDocuments(),
-          total: 0
+          nemsis,
+          nfirs,
+          neris,
+          total: nemsis + nfirs + neris
         },
         users: {
-          total: await User.countDocuments(),
-          active: await User.countDocuments({ isActive: true })
+          total: usersTotal,
+          active: usersActive
         },
         database: {
-          collections: await mongoose.connection.db.listCollections().toArray()
+          dialect: sequelize.getDialect()
         }
       };
-      
-      metrics.records.total = metrics.records.nemsis + metrics.records.nfirs + metrics.records.neris;
-      
+
       return metrics;
     } catch (error) {
-      return {
-        error: error.message
-      };
+      return { error: error.message };
     }
   }
 

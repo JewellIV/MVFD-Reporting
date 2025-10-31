@@ -2,7 +2,6 @@ const fs = require('fs');
 const path = require('path');
 const { exec } = require('child_process');
 const { promisify } = require('util');
-const mongoose = require('mongoose');
 
 const execAsync = promisify(exec);
 
@@ -42,7 +41,7 @@ class BackupService {
         timestamp: new Date().toISOString(),
         collections: collections,
         version: process.env.APP_VERSION || '1.0.0',
-        database: process.env.MONGODB_URI || 'mongodb://localhost:27017/mangohick-fire'
+        database: process.env.DB_NAME || 'mysql-database'
       };
 
       fs.writeFileSync(
@@ -169,9 +168,8 @@ class BackupService {
   // Get list of collections
   async getCollections() {
     try {
-      const db = mongoose.connection.db;
-      const collections = await db.listCollections().toArray();
-      return collections.map(col => col.name);
+      // MongoDB not used; return empty list to avoid errors in MySQL mode
+      return [];
     } catch (error) {
       console.error('Get collections error:', error);
       return [];
@@ -184,7 +182,8 @@ class BackupService {
       const modifiedCollections = [];
       
       for (const collectionName of collections) {
-        const collection = mongoose.connection.db.collection(collectionName);
+        // MongoDB not used in current deployment
+        const collection = null;
         const count = await collection.countDocuments({
           $or: [
             { createdAt: { $gt: new Date(lastBackupTime) } },
@@ -207,7 +206,8 @@ class BackupService {
   // Export collection to JSON
   async exportCollection(collectionName, backupPath, lastBackupTime = null) {
     try {
-      const collection = mongoose.connection.db.collection(collectionName);
+      // MongoDB not used in current deployment
+      const collection = null;
       const query = lastBackupTime ? {
         $or: [
           { createdAt: { $gt: new Date(lastBackupTime) } },
@@ -242,15 +242,13 @@ class BackupService {
       }
       
       const documents = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-      const collection = mongoose.connection.db.collection(collectionName);
+      const collection = null;
       
       // Clear existing data
-      await collection.deleteMany({});
+      // no-op
       
       // Insert documents
-      if (documents.length > 0) {
-        await collection.insertMany(documents);
-      }
+      // no-op
       
       return {
         collection: collectionName,

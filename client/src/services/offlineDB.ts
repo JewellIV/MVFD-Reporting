@@ -96,10 +96,12 @@ class OfflineDB {
     return new Promise((resolve, reject) => {
       const transaction = this.db!.transaction(['offlineRecords'], 'readonly');
       const store = transaction.objectStore('offlineRecords');
-      const index = store.index('synced');
-      const request = index.getAll(false);
+      const request = store.getAll();
 
-      request.onsuccess = () => resolve(request.result);
+      request.onsuccess = () => {
+        const all: OfflineRecord[] = request.result || [];
+        resolve(all.filter(r => !r.synced));
+      };
       request.onerror = () => reject(request.error);
     });
   }

@@ -148,30 +148,62 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(compression());
 app.use(morgan('combined'));
 
-// Routes
-app.use('/api/auth', require('./routes/auth'));
-app.use('/api/nemsis', require('./routes/nemsis'));
-app.use('/api/nfirs', require('./routes/nfirs'));
-app.use('/api/neris', require('./routes/neris'));
-app.use('/api/epcrs', require('./routes/epcrs'));
-app.use('/api/cad', require('./routes/cad'));
-app.use('/api/google', require('./routes/google'));
-app.use('/api/upload', require('./routes/upload'));
-app.use('/api/roster', require('./routes/roster'));
-app.use('/api/validation', require('./routes/validation'));
-app.use('/api/analytics', require('./routes/analytics'));
-app.use('/api/backup', require('./routes/backup'));
-app.use('/api/notifications', require('./routes/notifications'));
-app.use('/api/health', require('./routes/health'));
+// Routes (with error handling)
+try {
+  app.use('/api/auth', require('./routes/auth'));
+  app.use('/api/nemsis', require('./routes/nemsis'));
+  app.use('/api/nfirs', require('./routes/nfirs'));
+  app.use('/api/neris', require('./routes/neris'));
+  app.use('/api/epcrs', require('./routes/epcrs'));
+  app.use('/api/cad', require('./routes/cad'));
+  app.use('/api/google', require('./routes/google'));
+  app.use('/api/upload', require('./routes/upload'));
+  app.use('/api/roster', require('./routes/roster'));
+  app.use('/api/validation', require('./routes/validation'));
+  app.use('/api/analytics', require('./routes/analytics'));
+  app.use('/api/backup', require('./routes/backup'));
+  app.use('/api/notifications', require('./routes/notifications'));
+  app.use('/api/health', require('./routes/health'));
+  console.log('✅ All API routes loaded successfully');
+} catch (error) {
+  console.error('❌ Error loading routes:', error.message);
+  // Continue anyway - some routes might still work
+}
 
-// Serve client build (optional)
-if (process.env.SERVE_CLIENT === 'true') {
-  const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
-  app.use(express.static(clientBuildPath));
-  // Send index.html for any non-API route
-  app.get(/^\/(?!api).*/, (req, res) => {
-    res.sendFile(path.join(clientBuildPath, 'index.html'));
+// Root route handler (for API server)
+app.get('/', (req, res) => {
+  res.json({ 
+    service: 'Mangohick Fire Reporting API',
+    version: '1.0.0',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      nemsis: '/api/nemsis',
+      nfirs: '/api/nfirs',
+      neris: '/api/neris'
+    },
+    message: 'This is the API server. The frontend should be served separately.'
   });
+});
+
+// Serve client build (optional - only if build exists)
+if (process.env.SERVE_CLIENT === 'true') {
+  const fs = require('fs');
+  const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
+  const indexHtmlPath = path.join(clientBuildPath, 'index.html');
+  
+  // Check if client build directory exists
+  if (fs.existsSync(clientBuildPath) && fs.existsSync(indexHtmlPath)) {
+    app.use(express.static(clientBuildPath));
+    // Send index.html for any non-API route
+    app.get(/^\/(?!api).*/, (req, res) => {
+      res.sendFile(indexHtmlPath);
+    });
+    console.log('✅ Serving static client build from:', clientBuildPath);
+  } else {
+    console.warn('⚠️  SERVE_CLIENT=true but client build not found at:', clientBuildPath);
+    console.warn('   The frontend should be deployed separately or SERVE_CLIENT should be false.');
+  }
 }
 
 // Health check endpoint
@@ -183,18 +215,19 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Error handling middleware
+// 404 handler for API routes
+app.use('/api/*', (req, res) => {
+  res.status(404).json({ error: 'API route not found' });
+});
+
+// Error handling middleware (must be after all routes)
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ 
+  console.error('Error:', err.message);
+  console.error('Stack:', err.stack);
+  res.status(err.status || 500).json({ 
     error: 'Something went wrong!',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
   });
-});
-
-// 404 handler
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
 });
 
 // Database connection and server start

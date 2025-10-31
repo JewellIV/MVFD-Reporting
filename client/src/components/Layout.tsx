@@ -78,7 +78,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700">{user?.fullName}</p>
+                <p className="text-sm font-medium text-gray-700">{user ? `${user.firstName} ${user.lastName}` : ''}</p>
                 <p className="text-xs text-gray-500">{user?.role}</p>
               </div>
             </div>
@@ -125,7 +125,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700">{user?.fullName}</p>
+                <p className="text-sm font-medium text-gray-700">{user ? `${user.firstName} ${user.lastName}` : ''}</p>
                 <p className="text-xs text-gray-500">{user?.role}</p>
               </div>
             </div>

@@ -6,6 +6,7 @@ import {
   MagnifyingGlassIcon,
   FunnelIcon,
   ArrowDownTrayIcon,
+  DocumentTextIcon,
   EyeIcon,
   PencilIcon,
   TrashIcon,

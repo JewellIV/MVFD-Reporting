@@ -339,9 +339,9 @@ class AIAssistantService {
     }
 
     const checks: ProtocolCheck[] = [];
-    const requiredSteps = protocolData.steps;
-    const completedSteps = actions.filter(action => 
-      requiredSteps.some(step => action.toLowerCase().includes(step.toLowerCase()))
+    const requiredSteps: string[] = protocolData.steps;
+    const completedSteps = actions.filter((action: string) => 
+      requiredSteps.some((step: string) => action.toLowerCase().includes(step.toLowerCase()))
     );
 
     if (completedSteps.length === 0) {

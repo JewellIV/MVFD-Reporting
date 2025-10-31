@@ -163,8 +163,9 @@ class VoiceTranscriptionService {
 
   private processVoiceCommand(text: string) {
     const normalizedText = text.toLowerCase().trim();
-    
-    for (const [command, voiceCommand] of this.commands) {
+    const entries = Array.from(this.commands.entries());
+    for (let i = 0; i < entries.length; i++) {
+      const [command, voiceCommand] = entries[i];
       if (normalizedText.includes(command)) {
         this.onCommandCallback?.(voiceCommand);
         break;

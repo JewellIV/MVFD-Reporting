@@ -42,7 +42,10 @@ const Settings: React.FC = () => {
     },
   });
 
-  const cadSyncMutation = useMutation(cadAPI.manualSync, {
+  const cadSyncMutation = useMutation(
+    ({ syncType, dateRange }: { syncType: string; dateRange: any }) =>
+      cadAPI.manualSync(syncType, dateRange),
+    {
     onSuccess: () => {
       queryClient.invalidateQueries('cad-status');
       toast.success('CAD sync completed');
@@ -50,7 +53,8 @@ const Settings: React.FC = () => {
     onError: (error: any) => {
       toast.error(error.response?.data?.error || 'Failed to sync with CAD');
     },
-  });
+    }
+  );
 
   const handleSyncAll = () => {
     setIsSyncing(true);

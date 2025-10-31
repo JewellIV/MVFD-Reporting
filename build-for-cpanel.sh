@@ -55,7 +55,10 @@ echo ""
 cd client
 
 print_info "Installing client dependencies..."
-npm install
+if ! npm install; then
+    print_warning "npm install failed. Retrying with --legacy-peer-deps ..."
+    npm install --legacy-peer-deps --no-audit --no-fund
+fi
 
 if [ $? -ne 0 ]; then
     print_error "Failed to install client dependencies"

@@ -34,8 +34,12 @@ echo [INFO] Installing client dependencies...
 call npm install
 
 if errorlevel 1 (
-    echo [ERROR] Failed to install client dependencies
-    exit /b 1
+    echo [WARN] npm install failed. Retrying with --legacy-peer-deps ...
+    call npm install --legacy-peer-deps --no-audit --no-fund
+    if errorlevel 1 (
+        echo [ERROR] Failed to install client dependencies
+        exit /b 1
+    )
 )
 
 echo [SUCCESS] Client dependencies installed

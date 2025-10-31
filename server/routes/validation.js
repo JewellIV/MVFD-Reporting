@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const { auth } = require('../middleware/auth');
+const { auth, requireRole } = require('../middleware/auth');
 const NemsisValidator = require('../services/validation/nemsisValidator');
 const HIPAACompliance = require('../services/compliance/hipaaCompliance');
 

@@ -170,9 +170,9 @@ router.post('/validation-error', auth, [
       return res.status(400).json({ errors: errors.array() });
     }
 
-    const { recordId, errors } = req.body;
+    const { recordId, errors: validationErrors } = req.body;
     
-    const result = await notificationService.sendValidationErrorNotification(req.user._id, recordId, errors);
+    const result = await notificationService.sendValidationErrorNotification(req.user._id, recordId, validationErrors);
     
     if (result.success) {
       res.json({ message: 'Validation error notification sent successfully' });

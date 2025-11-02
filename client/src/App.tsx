@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Login from './pages/Login';
+import LoginSimple from './pages/LoginSimple';
 import Dashboard from './pages/Dashboard';
 import NemsisRecords from './pages/NemsisRecords';
 import NfirsRecords from './pages/NfirsRecords';
@@ -10,7 +11,11 @@ import Settings from './pages/Settings';
 import Layout from './components/Layout';
 import LoadingSpinner from './components/LoadingSpinner';
 
-const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface ProtectedRouteProps {
+  component: React.ComponentType<any>;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ component: Component }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -21,35 +26,32 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
     return <Navigate to="/login" replace />;
   }
 
-  return <>{children}</>;
+  return (
+    <Layout>
+      <Component />
+    </Layout>
+  );
+};
+
+const AppContent: React.FC = () => {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/login" element={<LoginSimple />} />
+        <Route path="/" element={<ProtectedRoute component={Dashboard} />} />
+        <Route path="/nemsis" element={<ProtectedRoute component={NemsisRecords} />} />
+        <Route path="/nfirs" element={<ProtectedRoute component={NfirsRecords} />} />
+        <Route path="/roster" element={<ProtectedRoute component={Roster} />} />
+        <Route path="/settings" element={<ProtectedRoute component={Settings} />} />
+      </Routes>
+    </Router>
+  );
 };
 
 const App: React.FC = () => {
   return (
     <AuthProvider>
-      <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route
-              path="/*"
-              element={
-                <ProtectedRoute>
-                  <Layout>
-                    <Routes>
-                      <Route path="/" element={<Dashboard />} />
-                      <Route path="/nemsis" element={<NemsisRecords />} />
-                      <Route path="/nfirs" element={<NfirsRecords />} />
-                      <Route path="/roster" element={<Roster />} />
-                      <Route path="/settings" element={<Settings />} />
-                    </Routes>
-                  </Layout>
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </div>
-      </Router>
+      <AppContent />
     </AuthProvider>
   );
 };

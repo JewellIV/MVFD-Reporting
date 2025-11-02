@@ -42,15 +42,23 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {
-      // Verify token and get user data
+      // Verify token and get user data with timeout
+      const timeoutId = setTimeout(() => {
+        setLoading(false);
+      }, 5000); // 5 second timeout
+      
       authAPI.getCurrentUser()
         .then((userData) => {
+          clearTimeout(timeoutId);
           setUser(userData.user);
         })
-        .catch(() => {
+        .catch((error) => {
+          clearTimeout(timeoutId);
+          console.warn('Auth check failed:', error);
           localStorage.removeItem('token');
         })
         .finally(() => {
+          clearTimeout(timeoutId);
           setLoading(false);
         });
     } else {

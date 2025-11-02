@@ -11,15 +11,16 @@ require('dotenv').config();
 // ===== CRITICAL FIX: MongoDB to Sequelize Compatibility Layer =====
 // This adds MongoDB-style methods to Sequelize models so routes can work
 const addMongooseCompatibility = () => {
-  const { Op } = require('sequelize');
-  const models = ['NerisRecord', 'NemsisRecord', 'NfirsRecord', 'User'];
-  
-  models.forEach(modelName => {
-    try {
-      const Model = require(`./models/${modelName}`);
-      
-      // Add .find() method (converts to .findAll()) with chainable methods
-      if (!Model.find) {
+  try {
+    const { Op } = require('sequelize');
+    const models = ['NerisRecord', 'NemsisRecord', 'NfirsRecord', 'User'];
+    
+    models.forEach(modelName => {
+      try {
+        const Model = require(`./models/${modelName}`);
+        
+        // Add .find() method (converts to .findAll()) with chainable methods
+        if (!Model.find) {
         class QueryBuilder {
           constructor(Model, query = {}) {
             this.Model = Model;
@@ -106,21 +107,31 @@ const addMongooseCompatibility = () => {
         };
       }
       
-      // Make .populate() a no-op for now (will need proper associations)
-      if (!Model.prototype.populate) {
-        Model.prototype.populate = function() {
-          return this;
-        };
+        // Make .populate() a no-op for now (will need proper associations)
+        if (!Model.prototype.populate) {
+          Model.prototype.populate = function() {
+            return this;
+          };
+        }
+      } catch (err) {
+        console.warn(`Could not add compatibility to ${modelName}:`, err.message);
+        // Continue with other models even if one fails
       }
-    } catch (err) {
-      console.warn(`Could not add compatibility to ${modelName}:`, err.message);
-    }
-  });
-  
-  console.log('✅ MongoDB compatibility layer added to Sequelize models');
+    });
+    
+    console.log('✅ MongoDB compatibility layer added to Sequelize models');
+  } catch (err) {
+    console.error('❌ Error initializing MongoDB compatibility layer:', err.message);
+    // Don't crash - routes might still work without the compatibility layer
+  }
 };
 
-addMongooseCompatibility();
+// Initialize compatibility layer - wrap in try-catch for serverless safety
+try {
+  addMongooseCompatibility();
+} catch (err) {
+  console.error('Failed to initialize compatibility layer:', err.message);
+}
 // ===== End of compatibility layer =====
 
 const app = express();
@@ -149,25 +160,44 @@ app.use(compression());
 app.use(morgan('combined'));
 
 // Routes (with error handling)
-try {
-  app.use('/api/auth', require('./routes/auth'));
-  app.use('/api/nemsis', require('./routes/nemsis'));
-  app.use('/api/nfirs', require('./routes/nfirs'));
-  app.use('/api/neris', require('./routes/neris'));
-  app.use('/api/epcrs', require('./routes/epcrs'));
-  app.use('/api/cad', require('./routes/cad'));
-  app.use('/api/google', require('./routes/google'));
-  app.use('/api/upload', require('./routes/upload'));
-  app.use('/api/roster', require('./routes/roster'));
-  app.use('/api/validation', require('./routes/validation'));
-  app.use('/api/analytics', require('./routes/analytics'));
-  app.use('/api/backup', require('./routes/backup'));
-  app.use('/api/notifications', require('./routes/notifications'));
-  app.use('/api/health', require('./routes/health'));
+const routeModules = [
+  { path: '/api/auth', module: './routes/auth' },
+  { path: '/api/nemsis', module: './routes/nemsis' },
+  { path: '/api/nfirs', module: './routes/nfirs' },
+  { path: '/api/neris', module: './routes/neris' },
+  { path: '/api/epcrs', module: './routes/epcrs' },
+  { path: '/api/cad', module: './routes/cad' },
+  { path: '/api/google', module: './routes/google' },
+  { path: '/api/upload', module: './routes/upload' },
+  { path: '/api/roster', module: './routes/roster' },
+  { path: '/api/validation', module: './routes/validation' },
+  { path: '/api/analytics', module: './routes/analytics' },
+  { path: '/api/backup', module: './routes/backup' },
+  { path: '/api/notifications', module: './routes/notifications' },
+  { path: '/api/health', module: './routes/health' }
+];
+
+let routesLoaded = 0;
+routeModules.forEach(({ path, module }) => {
+  try {
+    app.use(path, require(module));
+    routesLoaded++;
+  } catch (error) {
+    console.error(`❌ Error loading route ${path}:`, error.message);
+    // Add a fallback route for failed modules
+    app.use(path, (req, res) => {
+      res.status(503).json({ 
+        error: 'Service temporarily unavailable',
+        message: `Route ${path} failed to load: ${error.message}`
+      });
+    });
+  }
+});
+
+if (routesLoaded === routeModules.length) {
   console.log('✅ All API routes loaded successfully');
-} catch (error) {
-  console.error('❌ Error loading routes:', error.message);
-  // Continue anyway - some routes might still work
+} else {
+  console.warn(`⚠️  Only ${routesLoaded}/${routeModules.length} routes loaded successfully`);
 }
 
 // Root route handler (for API server)
@@ -236,24 +266,41 @@ async function startServer() {
     if (process.env.DB_SKIP_INIT === 'true') {
       console.warn('⚠️  DB initialization skipped due to DB_SKIP_INIT=true');
     } else {
-      await sequelize.authenticate();
-      console.log('Database connected successfully');
-      await sequelize.sync({ alter: true });
-      console.log('Database synchronized');
+      try {
+        await sequelize.authenticate();
+        console.log('Database connected successfully');
+        await sequelize.sync({ alter: true });
+        console.log('Database synchronized');
+      } catch (dbError) {
+        console.error('⚠️  Database connection failed (continuing anyway):', dbError.message);
+        // Don't exit - allow serverless functions to work without DB on startup
+      }
     }
 
-    app.listen(PORT, () => {
-      console.log(`🚒 Mangohick Fire Reporting Server running on port ${PORT}`);
-      console.log(`📊 NEMSIS 3.5 & NFIRS/NERIS Reporting System`);
-      console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
-      if (process.env.DB_SKIP_INIT === 'true') {
-        console.log('⚠️  Running with DB initialization skipped');
-      }
-    });
+    // Only call app.listen() if not in serverless environment (Vercel, AWS Lambda, etc.)
+    if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME && process.env.RUN_SERVER !== 'false') {
+      app.listen(PORT, () => {
+        console.log(`🚒 Mangohick Fire Reporting Server running on port ${PORT}`);
+        console.log(`📊 NEMSIS 3.5 & NFIRS/NERIS Reporting System`);
+        console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+        if (process.env.DB_SKIP_INIT === 'true') {
+          console.log('⚠️  Running with DB initialization skipped');
+        }
+      });
+    }
   } catch (error) {
     console.error('Unable to start server:', error);
-    process.exit(1);
+    // In serverless, don't exit - just log the error
+    if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+      process.exit(1);
+    }
   }
 }
 
-startServer();
+// For Vercel/serverless: export the app handler
+if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+  module.exports = app;
+} else {
+  // For traditional server: start the server
+  startServer();
+}

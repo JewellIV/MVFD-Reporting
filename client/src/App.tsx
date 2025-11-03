@@ -17,28 +17,27 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ component: Component }) => {
   // MUST call hooks FIRST - before any conditional returns
   // React Hooks Rules: hooks must be called in the same order every render
-  const { user, loading } = useAuth();
+  const authContext = useAuth();
+  const user = authContext?.user ?? null;
+  const loading = authContext?.loading ?? false;
 
-  // Now validate component after hooks
+  // Handle loading state first
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  // Handle unauthenticated state
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // Validate component exists
   if (!Component) {
     console.error('ProtectedRoute: No component provided');
     return <div>Error: No component provided</div>;
   }
 
-  if (typeof Component !== 'function') {
-    console.error('ProtectedRoute: Component is not a function', Component);
-    return <div>Error: Invalid component type</div>;
-  }
-
-  if (loading) {
-    return <LoadingSpinner />;
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
-
-  // Render component
+  // Render component - Component is a React.ComponentType, so render it as JSX
   return (
     <Layout>
       <Component />

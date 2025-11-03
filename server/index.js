@@ -137,6 +137,11 @@ try {
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Trust proxy for Vercel and other reverse proxies
+if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+  app.set('trust proxy', true);
+}
+
 // Security middleware
 app.use(helmet());
 app.use(cors({
@@ -147,7 +152,8 @@ app.use(cors({
 // Rate limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100 // limit each IP to 100 requests per windowMs
+  max: 100, // limit each IP to 100 requests per windowMs
+  trustProxy: process.env.VERCEL ? true : false // Trust proxy in Vercel
 });
 app.use(limiter);
 
@@ -180,15 +186,22 @@ const routeModules = [
 let routesLoaded = 0;
 routeModules.forEach(({ path, module }) => {
   try {
-    app.use(path, require(module));
+    // Try to resolve the module path - handle both relative and absolute
+    const pathModule = require.resolve(module, { paths: [__dirname] });
+    app.use(path, require(pathModule));
     routesLoaded++;
   } catch (error) {
     console.error(`❌ Error loading route ${path}:`, error.message);
+    if (error.code === 'MODULE_NOT_FOUND') {
+      console.error(`   Module path attempted: ${module}`);
+      console.error(`   Current directory: ${__dirname}`);
+    }
     // Add a fallback route for failed modules
     app.use(path, (req, res) => {
       res.status(503).json({ 
         error: 'Service temporarily unavailable',
-        message: `Route ${path} failed to load: ${error.message}`
+        message: `Route ${path} failed to load: ${error.message}`,
+        code: error.code || 'UNKNOWN_ERROR'
       });
     });
   }

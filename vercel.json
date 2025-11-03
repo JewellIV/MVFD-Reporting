@@ -3,7 +3,8 @@
   "installCommand": "npm install",
   "functions": {
     "api/index.js": {
-      "runtime": "@vercel/node"
+      "runtime": "@vercel/node",
+      "includeFiles": "server/**"
     }
   },
   "routes": [

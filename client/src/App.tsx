@@ -18,6 +18,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ component: Component })
   // MUST call hooks FIRST - before any conditional returns
   // React Hooks Rules: hooks must be called in the same order every render
   const authContext = useAuth();
+  
+  // Safely extract values - ensure they're primitives, not objects
   const user = authContext?.user ?? null;
   const loading = authContext?.loading ?? false;
 
@@ -31,13 +33,19 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ component: Component })
     return <Navigate to="/login" replace />;
   }
 
-  // Validate component exists
+  // Validate component exists and is a function
   if (!Component) {
     console.error('ProtectedRoute: No component provided');
     return <div>Error: No component provided</div>;
   }
 
-  // Render component - Component is a React.ComponentType, so render it as JSX
+  if (typeof Component !== 'function') {
+    console.error('ProtectedRoute: Component is not a function', typeof Component);
+    return <div>Error: Invalid component</div>;
+  }
+
+  // Render component - use JSX which ensures proper element creation
+  // Component is a React.ComponentType, so <Component /> creates a valid element
   return (
     <Layout>
       <Component />

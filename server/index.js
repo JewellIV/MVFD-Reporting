@@ -137,8 +137,11 @@ try {
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Trust proxy for Vercel and other reverse proxies
-if (process.env.VERCEL || process.env.NODE_ENV === 'production') {
+// Trust proxy for Vercel - but use specific IP ranges to avoid rate limit bypass
+if (process.env.VERCEL) {
+  // Vercel's proxy IPs - trust only Vercel's infrastructure
+  app.set('trust proxy', 1); // Trust only the first proxy (Vercel's edge)
+} else if (process.env.NODE_ENV === 'production') {
   app.set('trust proxy', true);
 }
 
@@ -153,7 +156,15 @@ app.use(cors({
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
-  trustProxy: process.env.VERCEL ? true : false // Trust proxy in Vercel
+  // For Vercel, use request IP from headers instead of trust proxy
+  keyGenerator: (req) => {
+    // Try to get real IP from various headers
+    return req.headers['x-forwarded-for']?.split(',')[0]?.trim() ||
+           req.headers['x-real-ip'] ||
+           req.ip ||
+           req.connection.remoteAddress ||
+           'unknown';
+  }
 });
 app.use(limiter);
 
@@ -184,24 +195,47 @@ const routeModules = [
 ];
 
 let routesLoaded = 0;
-routeModules.forEach(({ path, module }) => {
+routeModules.forEach(({ path: routePath, module: modulePath }) => {
   try {
-    // Try to resolve the module path - handle both relative and absolute
-    const pathModule = require.resolve(module, { paths: [__dirname] });
-    app.use(path, require(pathModule));
-    routesLoaded++;
+    const fs = require('fs');
+    // Extract just the filename from './routes/auth' -> 'auth'
+    const routeName = modulePath.replace('./routes/', '');
+    const routeFilePath = path.join(__dirname, 'routes', `${routeName}.js`);
+    
+    // Log for debugging
+    console.log(`Attempting to load route ${routePath} from: ${routeFilePath}`);
+    
+    // Check if file exists
+    if (fs.existsSync(routeFilePath)) {
+      app.use(routePath, require(routeFilePath));
+      routesLoaded++;
+      console.log(`✅ Loaded route ${routePath} from ${routeFilePath}`);
+    } else {
+      // Try with require.resolve as fallback
+      const resolvedPath = require.resolve(modulePath, { paths: [__dirname] });
+      app.use(routePath, require(resolvedPath));
+      routesLoaded++;
+      console.log(`✅ Loaded route ${routePath} via require.resolve: ${resolvedPath}`);
+    }
   } catch (error) {
-    console.error(`❌ Error loading route ${path}:`, error.message);
+    console.error(`❌ Error loading route ${routePath}:`, error.message);
     if (error.code === 'MODULE_NOT_FOUND') {
-      console.error(`   Module path attempted: ${module}`);
+      console.error(`   Module path attempted: ${modulePath}`);
       console.error(`   Current directory: ${__dirname}`);
+      console.error(`   Files in routes directory:`, fs.existsSync(path.join(__dirname, 'routes')) ? 
+        fs.readdirSync(path.join(__dirname, 'routes')).join(', ') : 'routes directory not found');
     }
     // Add a fallback route for failed modules
-    app.use(path, (req, res) => {
+    app.use(routePath, (req, res) => {
       res.status(503).json({ 
         error: 'Service temporarily unavailable',
-        message: `Route ${path} failed to load: ${error.message}`,
-        code: error.code || 'UNKNOWN_ERROR'
+        message: `Route ${routePath} failed to load: ${error.message}`,
+        code: error.code || 'UNKNOWN_ERROR',
+        debug: {
+          modulePath,
+          currentDir: __dirname,
+          attemptedPath: path.join(__dirname, 'routes', modulePath.replace('./routes/', '') + '.js')
+        }
       });
     });
   }

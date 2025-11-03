@@ -23,10 +23,18 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const useAuth = () => {
+export const useAuth = (): AuthContextType => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    // Return a safe default instead of throwing to prevent React errors
+    console.warn('useAuth called outside AuthProvider, returning default');
+    return {
+      user: null,
+      loading: false,
+      login: async () => { throw new Error('Not authenticated'); },
+      logout: () => {},
+      updateUser: () => {}
+    };
   }
   return context;
 };

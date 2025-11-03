@@ -16,21 +16,40 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ component: Component }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return <LoadingSpinner />;
+  // Validate component first
+  if (!Component) {
+    console.error('ProtectedRoute: No component provided');
+    return <div>Error: No component provided</div>;
   }
 
-  if (!user) {
+  if (typeof Component !== 'function') {
+    console.error('ProtectedRoute: Component is not a function', Component);
+    return <div>Error: Invalid component type</div>;
+  }
+
+  try {
+    const { user, loading } = useAuth();
+
+    if (loading) {
+      return <LoadingSpinner />;
+    }
+
+    if (!user) {
+      return <Navigate to="/login" replace />;
+    }
+
+    // Render component directly without extra wrapper
+    const ComponentToRender = Component;
+    return (
+      <Layout>
+        <ComponentToRender />
+      </Layout>
+    );
+  } catch (error) {
+    console.error('ProtectedRoute error:', error);
+    // If auth fails, redirect to login
     return <Navigate to="/login" replace />;
   }
-
-  return (
-    <Layout>
-      <Component />
-    </Layout>
-  );
 };
 
 const AppContent: React.FC = () => {

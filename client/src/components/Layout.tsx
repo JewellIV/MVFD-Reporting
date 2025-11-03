@@ -156,9 +156,11 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             <div className="flex items-center gap-x-4 lg:gap-x-6">
               <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" />
               <div className="flex items-center gap-x-4 lg:gap-x-6">
-                <span className="text-sm text-gray-700">
-                  {user?.badgeNumber && `Badge #${user.badgeNumber}`}
-                </span>
+                {user?.badgeNumber && (
+                  <span className="text-sm text-gray-700">
+                    Badge #{user.badgeNumber}
+                  </span>
+                )}
               </div>
             </div>
           </div>

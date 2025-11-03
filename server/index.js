@@ -173,8 +173,8 @@ const routeModules = [
   { path: '/api/validation', module: './routes/validation' },
   { path: '/api/analytics', module: './routes/analytics' },
   { path: '/api/backup', module: './routes/backup' },
-  { path: '/api/notifications', module: './routes/notifications' },
-  { path: '/api/health', module: './routes/health' }
+  { path: '/api/notifications', module: './routes/notifications' }
+  // Note: /api/health is handled inline below (after routes load) to ensure it works
 ];
 
 let routesLoaded = 0;
@@ -236,18 +236,33 @@ if (process.env.SERVE_CLIENT === 'true') {
   }
 }
 
-// Health check endpoint
+// Health check endpoint (register BEFORE 404 handler)
+// Handle both /api/health and /api/health/ (with trailing slash)
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    service: 'Mangohick Fire Reporting API'
+    service: 'Mangohick Fire Reporting API',
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
-// 404 handler for API routes
+app.get('/api/health/', (req, res) => {
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    service: 'Mangohick Fire Reporting API',
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// 404 handler for API routes (must come AFTER all route definitions)
 app.use('/api/*', (req, res) => {
-  res.status(404).json({ error: 'API route not found' });
+  res.status(404).json({ 
+    error: 'API route not found', 
+    path: req.path,
+    method: req.method
+  });
 });
 
 // Error handling middleware (must be after all routes)

@@ -1,5 +1,5 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import LoginSimple from './pages/LoginSimple';
 import Dashboard from './pages/Dashboard';
@@ -17,20 +17,28 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ component: Component }) => {
   // MUST call hooks FIRST - before any conditional returns
   // React Hooks Rules: hooks must be called in the same order every render
+  const navigate = useNavigate();
   const authContext = useAuth();
   
   // Safely extract values - ensure they're primitives, not objects
   const user = authContext?.user ?? null;
   const loading = authContext?.loading ?? false;
 
-  // Handle loading state first
+  // Use effect to handle navigation instead of returning Navigate component
+  useEffect(() => {
+    if (!loading && !user) {
+      navigate('/login', { replace: true });
+    }
+  }, [loading, user, navigate]);
+
+  // Handle loading state
   if (loading) {
     return <LoadingSpinner />;
   }
 
-  // Handle unauthenticated state
+  // Handle unauthenticated state - show nothing while redirecting
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <LoadingSpinner />;
   }
 
   // Validate component exists and is a function

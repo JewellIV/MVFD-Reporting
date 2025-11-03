@@ -212,7 +212,10 @@ app.get('/', (req, res) => {
       nfirs: '/api/nfirs',
       neris: '/api/neris'
     },
-    message: 'This is the API server. The frontend should be served separately.'
+    message: 'This is the API server. The frontend should be served separately.',
+    vercel: !!process.env.VERCEL,
+    path: req.path,
+    url: req.url
   });
 });
 

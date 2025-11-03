@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#dc2626"/>
+  
+  <!-- Fire truck icon (simplified) -->
+  <rect x="80" y="280" width="352" height="120" rx="20" fill="#ffffff"/>
+  <rect x="100" y="300" width="80" height="80" rx="10" fill="#1f2937"/>
+  <rect x="332" y="300" width="80" height="80" rx="10" fill="#1f2937"/>
+  <circle cx="140" cy="380" r="25" fill="#374151"/>
+  <circle cx="372" cy="380" r="25" fill="#374151"/>
+  
+  <!-- Ladder -->
+  <rect x="220" y="220" width="72" height="8" fill="#ffffff"/>
+  <rect x="224" y="212" width="64" height="8" fill="#ffffff"/>
+  <rect x="228" y="204" width="56" height="8" fill="#ffffff"/>
+  
+  <!-- Shield/Star in center -->
+  <polygon points="256,160 276,200 320,210 290,240 295,285 256,265 217,285 222,240 192,210 236,200" fill="#ffffff"/>
+  
+  <!-- Text "MVFD" -->
+  <text x="256" y="320" font-family="Arial, sans-serif" font-size="48" font-weight="bold" fill="#dc2626" text-anchor="middle">MVFD</text>
+</svg>

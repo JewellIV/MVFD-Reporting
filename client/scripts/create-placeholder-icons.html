@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Icon Generator</title>
+</head>
+<body>
+  <h1>Generate Placeholder Icons</h1>
+  <p>Open browser console and run the generated code below, or save the canvas images manually.</p>
+  
+  <canvas id="canvas" width="512" height="512" style="border: 1px solid #ccc;"></canvas>
+  
+  <script>
+    const sizes = [72, 96, 128, 144, 152, 192, 384, 512];
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    function generateIcon(size) {
+      canvas.width = size;
+      canvas.height = size;
+      
+      // Red background
+      ctx.fillStyle = '#dc2626';
+      ctx.fillRect(0, 0, size, size);
+      
+      // White circle
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(size / 2, size / 2, size * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // Fire icon (simplified triangle)
+      ctx.fillStyle = '#dc2626';
+      ctx.beginPath();
+      ctx.moveTo(size / 2, size * 0.25);
+      ctx.lineTo(size * 0.35, size * 0.55);
+      ctx.lineTo(size * 0.65, size * 0.55);
+      ctx.closePath();
+      ctx.fill();
+      
+      // Text "MVFD" (only for larger sizes)
+      if (size >= 192) {
+        ctx.fillStyle = '#dc2626';
+        ctx.font = `bold ${size * 0.08}px Arial`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('MVFD', size / 2, size * 0.75);
+      }
+      
+      // Download
+      canvas.toBlob((blob) => {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `icon-${size}x${size}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+    }
+    
+    console.log('Run this in console to generate all icons:');
+    console.log('sizes.forEach(size => { setTimeout(() => generateIcon(size), size * 10); });');
+    
+    // Generate all icons
+    sizes.forEach((size, index) => {
+      setTimeout(() => {
+        generateIcon(size);
+        console.log(`Generated icon-${size}x${size}.png`);
+      }, index * 500);
+    });
+    
+    // Also generate favicon and logo192
+    setTimeout(() => {
+      generateIcon(32); // favicon
+      setTimeout(() => generateIcon(192), 500); // logo192
+    }, sizes.length * 500);
+  </script>
+</body>
+</html>

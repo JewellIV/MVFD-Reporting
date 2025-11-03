@@ -107,7 +107,12 @@ module.exports = new Proxy({}, {
       throw new Error(`Database not available. Cannot access ${prop}. mysql2 package may be missing.`);
     }
     
-    return typeof db[prop] === 'function' ? db[prop].bind(db) : db[prop];
+    // Bind methods to the db instance
+    const value = db[prop];
+    if (typeof value === 'function') {
+      return value.bind(db);
+    }
+    return value;
   },
   has(target, prop) {
     const db = initializeSequelize();

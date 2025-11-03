@@ -4,7 +4,11 @@
   "functions": {
     "api/index.js": {
       "runtime": "@vercel/node",
-      "includeFiles": "server/**"
+      "includeFiles": [
+        "server/**",
+        "node_modules/mysql2/**",
+        "node_modules/sequelize/**"
+      ]
     }
   },
   "routes": [

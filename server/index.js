@@ -316,27 +316,27 @@ async function startServer() {
 }
 
 // For Vercel/serverless: export the app handler
-// Vercel automatically sets VERCEL=1, but we also check for serverless function contexts
+// Check if we're being imported from api/index.js (Vercel handler)
+const isApiHandler = require.main && require.main.filename && require.main.filename.includes('api/index.js');
 const isServerless = process.env.VERCEL || 
                      process.env.AWS_LAMBDA_FUNCTION_NAME || 
                      process.env.VERCEL_ENV ||
                      process.env.VERCEL_REGION ||
+                     isApiHandler ||
                      (!process.env.RUN_SERVER || process.env.RUN_SERVER === 'false');
 
-// Always export for serverless, but also start server if needed
-if (isServerless) {
-  // Export Express app for serverless platforms (Vercel, AWS Lambda, etc.)
-  // @vercel/node automatically wraps Express apps
-  module.exports = app;
+// Always export the app - Vercel will wrap it
+module.exports = app;
+
+// Only start server if NOT in serverless environment and not imported from API handler
+if (!isServerless && !isApiHandler) {
+  startServer();
+} else {
   console.log('📦 Exported as serverless function handler');
-  console.log('🔍 Vercel environment detected:', {
+  console.log('🔍 Environment:', {
     VERCEL: process.env.VERCEL,
     VERCEL_ENV: process.env.VERCEL_ENV,
-    VERCEL_REGION: process.env.VERCEL_REGION
+    VERCEL_REGION: process.env.VERCEL_REGION,
+    isApiHandler: isApiHandler
   });
-}
-
-// Only start server if NOT in serverless environment
-if (!isServerless) {
-  startServer();
 }

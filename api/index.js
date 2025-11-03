@@ -1,7 +1,19 @@
-// Vercel API route that imports the Express app from server
-// This ensures dependencies are correctly resolved
+// Vercel API route handler
+// This file must export a function or Express app for @vercel/node
 
-// For Vercel's @vercel/node, we need to ensure the app is exported correctly
-// The server/index.js exports the app when VERCEL env var is set
-module.exports = require('../server/index.js');
+// Set Vercel environment before requiring server
+if (!process.env.VERCEL) {
+  process.env.VERCEL = '1';
+}
+
+// Import the Express app from server
+// server/index.js will export the app when VERCEL is detected
+const app = require('../server/index.js');
+
+// Ensure we export the Express app
+// @vercel/node will automatically wrap it
+module.exports = app;
+
+// Log for debugging
+console.log('API handler loaded, app type:', typeof app);
 

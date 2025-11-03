@@ -1,7 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
-import Login from './pages/Login';
 import LoginSimple from './pages/LoginSimple';
 import Dashboard from './pages/Dashboard';
 import NemsisRecords from './pages/NemsisRecords';
@@ -16,7 +15,11 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ component: Component }) => {
-  // Validate component first
+  // MUST call hooks FIRST - before any conditional returns
+  // React Hooks Rules: hooks must be called in the same order every render
+  const { user, loading } = useAuth();
+
+  // Now validate component after hooks
   if (!Component) {
     console.error('ProtectedRoute: No component provided');
     return <div>Error: No component provided</div>;
@@ -27,29 +30,20 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ component: Component })
     return <div>Error: Invalid component type</div>;
   }
 
-  try {
-    const { user, loading } = useAuth();
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
-    if (loading) {
-      return <LoadingSpinner />;
-    }
-
-    if (!user) {
-      return <Navigate to="/login" replace />;
-    }
-
-    // Render component directly without extra wrapper
-    const ComponentToRender = Component;
-    return (
-      <Layout>
-        <ComponentToRender />
-      </Layout>
-    );
-  } catch (error) {
-    console.error('ProtectedRoute error:', error);
-    // If auth fails, redirect to login
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
+
+  // Render component
+  return (
+    <Layout>
+      <Component />
+    </Layout>
+  );
 };
 
 const AppContent: React.FC = () => {

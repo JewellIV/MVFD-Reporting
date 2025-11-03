@@ -298,8 +298,17 @@ async function startServer() {
 }
 
 // For Vercel/serverless: export the app handler
-if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME) {
+// Vercel automatically sets VERCEL=1, but we also check for serverless function contexts
+const isServerless = process.env.VERCEL || 
+                     process.env.AWS_LAMBDA_FUNCTION_NAME || 
+                     process.env.VERCEL_ENV ||
+                     !process.env.RUN_SERVER || 
+                     process.env.RUN_SERVER === 'false';
+
+if (isServerless) {
+  // Export Express app for serverless platforms (Vercel, AWS Lambda, etc.)
   module.exports = app;
+  console.log('📦 Exported as serverless function handler');
 } else {
   // For traditional server: start the server
   startServer();

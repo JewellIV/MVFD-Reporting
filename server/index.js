@@ -320,14 +320,23 @@ async function startServer() {
 const isServerless = process.env.VERCEL || 
                      process.env.AWS_LAMBDA_FUNCTION_NAME || 
                      process.env.VERCEL_ENV ||
-                     !process.env.RUN_SERVER || 
-                     process.env.RUN_SERVER === 'false';
+                     process.env.VERCEL_REGION ||
+                     (!process.env.RUN_SERVER || process.env.RUN_SERVER === 'false');
 
+// Always export for serverless, but also start server if needed
 if (isServerless) {
   // Export Express app for serverless platforms (Vercel, AWS Lambda, etc.)
+  // @vercel/node automatically wraps Express apps
   module.exports = app;
   console.log('📦 Exported as serverless function handler');
-} else {
-  // For traditional server: start the server
+  console.log('🔍 Vercel environment detected:', {
+    VERCEL: process.env.VERCEL,
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    VERCEL_REGION: process.env.VERCEL_REGION
+  });
+}
+
+// Only start server if NOT in serverless environment
+if (!isServerless) {
   startServer();
 }

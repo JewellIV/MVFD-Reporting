@@ -321,67 +321,37 @@ console.log(`📦 Serve client: ${process.env.SERVE_CLIENT === 'true' || process
 console.log(`🔐 JWT Secret: ${process.env.JWT_SECRET ? 'Set' : 'MISSING - This will cause authentication errors!'}`);
 console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 
-// Favicon handler (handle before other routes to avoid errors)
-app.get('/favicon.ico', (req, res) => {
-  // Check multiple possible locations for favicon
-  const possibleFaviconPaths = [
-    clientBuildPath ? path.join(clientBuildPath, 'favicon.ico') : null,
-    path.join(__dirname, '..', 'build', 'favicon.ico'),
-    path.join(__dirname, '..', 'client', 'build', 'favicon.ico'),
-    path.join(__dirname, '..', 'build-for-cpanel', 'favicon.ico'),
-    path.join(__dirname, '..', 'public', 'favicon.ico'),
-  ].filter(Boolean); // Remove null values
-  
-  let faviconFound = false;
-  for (const faviconPath of possibleFaviconPaths) {
-    if (fs.existsSync(faviconPath)) {
-      res.sendFile(path.resolve(faviconPath));
-      faviconFound = true;
-      break;
-    }
-  }
-  
-  if (!faviconFound) {
-    // Return 204 No Content instead of 404 to prevent browser console errors
-    res.status(204).end();
-  }
-});
-
-// Root route handler (for API server)
-app.get('/', (req, res) => {
-  // If client is being served, redirect to frontend, otherwise show API info
-  if (clientBuildPath && indexHtmlPath && fs.existsSync(indexHtmlPath) && (process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production')) {
-    // Serve the frontend index.html
-    res.sendFile(path.resolve(indexHtmlPath));
-  } else {
-    // API info page
-    res.json({ 
-      service: 'Mangohick Fire Reporting API',
-      version: '1.0.0',
-      endpoints: {
-        health: '/api/health',
-        auth: '/api/auth',
-        nemsis: '/api/nemsis',
-        nfirs: '/api/nfirs',
-        neris: '/api/neris'
-      },
-      message: 'This is the API server. The frontend should be served separately.',
-      vercel: !!process.env.VERCEL,
-      path: req.path,
-      url: req.url
-    });
-  }
-});
+// CRITICAL ROUTE ORDER:
+// 1. Static file middleware (serves JS, CSS, images, favicon.ico)
+// 2. React Router catch-all (serves index.html for SPA routes like /login)
+// 3. Root route handler (fallback for /)
+// 4. Favicon handler (fallback if static didn't serve it)
+// 5. Health check endpoints
+// 6. 404 handlers
 
 if (process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production') {
   // Check if client build directory exists
   if (clientBuildPath && indexHtmlPath && fs.existsSync(clientBuildPath) && fs.existsSync(indexHtmlPath)) {
     try {
       // Serve static files from client build
-      app.use(express.static(clientBuildPath, {
+      // Use absolute path for serverless environments
+      const absoluteBuildPath = path.resolve(clientBuildPath);
+      
+      // IMPORTANT: Use fallthrough: true so static files can be checked first,
+      // but if not found, it falls through to the catch-all route
+      app.use(express.static(absoluteBuildPath, {
         maxAge: '1d',
         etag: true,
-        lastModified: true
+        lastModified: true,
+        fallthrough: true, // Allow fallthrough to catch-all for SPA routes
+        setHeaders: (res, filePath) => {
+          // Set proper content types for common file types
+          if (filePath.endsWith('.js')) {
+            res.setHeader('Content-Type', 'application/javascript');
+          } else if (filePath.endsWith('.css')) {
+            res.setHeader('Content-Type', 'text/css');
+          }
+        }
       }));
       
       // Send index.html for any non-API route (React Router catch-all)
@@ -393,15 +363,20 @@ if (process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production'
         throw new Error(`Index HTML file does not exist at: ${absoluteIndexPath}`);
       }
       
+      // React Router catch-all - serve index.html for all non-API routes
+      // This MUST come after static file middleware
+      // With fallthrough: true, static files are checked first, then this handles SPA routes
       app.get(/^\/(?!api).*/, (req, res, next) => {
-        // Skip if this is a static file request (should have been handled by express.static)
+        // Skip static file requests (they should have been handled by express.static)
+        // But if they weren't found, we'll get here - check if it's a static file request
         if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map)$/)) {
-          // Static files should have been served by express.static above
-          // If we reach here, the file wasn't found
+          // Static file was requested but not found - return 404
+          console.warn(`Static file not found: ${req.path}`);
           return res.status(404).json({ 
             error: 'Static file not found', 
             path: req.path,
-            message: 'The requested static file was not found in the build directory'
+            message: 'The requested static file was not found in the build directory',
+            buildPath: absoluteBuildPath
           });
         }
         
@@ -439,21 +414,34 @@ if (process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production'
       });
       
       console.log('✅ Serving static client build from:', clientBuildPath);
+      console.log('✅ React Router catch-all configured for SPA routing');
     } catch (error) {
       console.error('❌ Error setting up static file serving:', error.message);
+      console.error('Stack:', error.stack);
       console.warn('   Frontend routes will not be available');
+      
+      // Add fallback route handler for errors
+      app.get(/^\/(?!api).*/, (req, res) => {
+        res.status(500).json({
+          error: 'Frontend setup error',
+          message: 'Static file serving failed to initialize',
+          path: req.path
+        });
+      });
     }
   } else {
     console.warn('⚠️  Client build not found at:', clientBuildPath);
     console.warn('   Expected path:', indexHtmlPath);
     console.warn('   The frontend should be deployed separately or build the client first.');
     
-    // Add a fallback route handler for non-API routes
+    // Add a fallback route handler for non-API routes when build is missing
     app.get(/^\/(?!api).*/, (req, res) => {
       res.status(404).json({
         error: 'Frontend not available',
         message: 'The client build is not available. Please build the frontend or deploy it separately.',
-        path: req.path
+        path: req.path,
+        buildPath: clientBuildPath || 'Not found',
+        indexPath: indexHtmlPath || 'Not found'
       });
     });
   }
@@ -468,6 +456,70 @@ if (process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production'
     });
   });
 }
+
+// Root route handler - serve index.html for /
+// This should only be reached if the catch-all didn't handle it
+app.get('/', (req, res, next) => {
+  // If we have a build, serve index.html
+  if (clientBuildPath && indexHtmlPath && fs.existsSync(indexHtmlPath)) {
+    const absoluteIndexPath = path.resolve(indexHtmlPath);
+    res.sendFile(absoluteIndexPath, (err) => {
+      if (err) {
+        console.error('Error sending index.html for root:', err);
+        if (!res.headersSent) {
+          next(err);
+        }
+      }
+    });
+  } else {
+    // No build available - show API info
+    res.json({ 
+      service: 'Mangohick Fire Reporting API',
+      version: '1.0.0',
+      endpoints: {
+        health: '/api/health',
+        auth: '/api/auth',
+        nemsis: '/api/nemsis',
+        nfirs: '/api/nfirs',
+        neris: '/api/neris'
+      },
+      message: 'This is the API server. The frontend should be served separately.',
+      vercel: !!process.env.VERCEL,
+      path: req.path,
+      url: req.url
+    });
+  }
+});
+
+// Favicon handler - fallback if static middleware didn't serve it
+app.get('/favicon.ico', (req, res) => {
+  // Try to find and serve favicon from multiple locations
+  const possibleFaviconPaths = [
+    clientBuildPath ? path.join(clientBuildPath, 'favicon.ico') : null,
+    path.join(__dirname, '..', 'build', 'favicon.ico'),
+    path.join(__dirname, '..', 'client', 'build', 'favicon.ico'),
+    path.join(__dirname, '..', 'build-for-cpanel', 'favicon.ico'),
+    path.join(__dirname, '..', 'public', 'favicon.ico'),
+  ].filter(Boolean); // Remove null values
+  
+  let faviconFound = false;
+  for (const faviconPath of possibleFaviconPaths) {
+    if (fs.existsSync(faviconPath)) {
+      try {
+        res.sendFile(path.resolve(faviconPath));
+        faviconFound = true;
+        break;
+      } catch (error) {
+        console.error('Error serving favicon:', error);
+      }
+    }
+  }
+  
+  if (!faviconFound) {
+    // Return 204 No Content instead of 404 to prevent browser console errors
+    res.status(204).end();
+  }
+});
 
 // Health check endpoint (register BEFORE 404 handler)
 // Handle both /api/health and /api/health/ (with trailing slash)

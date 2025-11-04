@@ -280,24 +280,68 @@ if (routesLoaded === routeModules.length) {
   console.warn(`⚠️  Only ${routesLoaded}/${routeModules.length} routes loaded successfully`);
 }
 
+// Serve client build (optional - only if build exists)
+// Check multiple possible locations for the build files
+const possibleBuildPaths = [
+  path.join(__dirname, '..', 'build'),              // Root level build directory
+  path.join(__dirname, '..', 'client', 'build'),    // Client subdirectory build
+  path.join(__dirname, '..', 'build-for-cpanel'),    // CPanel deployment build
+  path.join(__dirname, '..', 'public'),              // Public directory
+  path.join(__dirname, '..', 'dist'),                // Alternative build directory
+];
+
+// Find the first existing build directory
+let clientBuildPath = null;
+let indexHtmlPath = null;
+
+for (const buildPath of possibleBuildPaths) {
+  const indexPath = path.join(buildPath, 'index.html');
+  if (fs.existsSync(buildPath) && fs.existsSync(indexPath)) {
+    clientBuildPath = buildPath;
+    indexHtmlPath = indexPath;
+    console.log(`✅ Found build directory at: ${buildPath}`);
+    break;
+  }
+}
+
+// Log if no build found
+if (!clientBuildPath) {
+  console.warn('⚠️  No build directory found. Checked paths:');
+  possibleBuildPaths.forEach(p => {
+    console.warn(`   - ${p} (exists: ${fs.existsSync(p)})`);
+  });
+}
+
 // Add startup logging (after routes are loaded)
-const clientBuildPathForLog = path.join(__dirname, '..', 'client', 'build');
-const indexHtmlPathForLog = path.join(clientBuildPathForLog, 'index.html');
 console.log('🚀 Server initialization complete');
-console.log(`📁 Client build path: ${clientBuildPathForLog}`);
-console.log(`📄 Index HTML path: ${indexHtmlPathForLog}`);
-console.log(`📦 Build exists: ${fs.existsSync(indexHtmlPathForLog)}`);
+console.log(`📁 Client build path: ${clientBuildPath || 'Not found'}`);
+console.log(`📄 Index HTML path: ${indexHtmlPath || 'Not found'}`);
+console.log(`📦 Build exists: ${clientBuildPath && indexHtmlPath ? fs.existsSync(indexHtmlPath) : false}`);
 console.log(`📦 Serve client: ${process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production'}`);
 console.log(`🔐 JWT Secret: ${process.env.JWT_SECRET ? 'Set' : 'MISSING - This will cause authentication errors!'}`);
 console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 
 // Favicon handler (handle before other routes to avoid errors)
 app.get('/favicon.ico', (req, res) => {
-  const faviconPath = path.join(__dirname, '..', 'client', 'build', 'favicon.ico');
+  // Check multiple possible locations for favicon
+  const possibleFaviconPaths = [
+    clientBuildPath ? path.join(clientBuildPath, 'favicon.ico') : null,
+    path.join(__dirname, '..', 'build', 'favicon.ico'),
+    path.join(__dirname, '..', 'client', 'build', 'favicon.ico'),
+    path.join(__dirname, '..', 'build-for-cpanel', 'favicon.ico'),
+    path.join(__dirname, '..', 'public', 'favicon.ico'),
+  ].filter(Boolean); // Remove null values
   
-  if (fs.existsSync(faviconPath)) {
-    res.sendFile(path.resolve(faviconPath));
-  } else {
+  let faviconFound = false;
+  for (const faviconPath of possibleFaviconPaths) {
+    if (fs.existsSync(faviconPath)) {
+      res.sendFile(path.resolve(faviconPath));
+      faviconFound = true;
+      break;
+    }
+  }
+  
+  if (!faviconFound) {
     // Return 204 No Content instead of 404 to prevent browser console errors
     res.status(204).end();
   }
@@ -306,10 +350,7 @@ app.get('/favicon.ico', (req, res) => {
 // Root route handler (for API server)
 app.get('/', (req, res) => {
   // If client is being served, redirect to frontend, otherwise show API info
-  const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
-  const indexHtmlPath = path.join(clientBuildPath, 'index.html');
-  
-  if (fs.existsSync(indexHtmlPath) && (process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production')) {
+  if (clientBuildPath && indexHtmlPath && fs.existsSync(indexHtmlPath) && (process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production')) {
     // Serve the frontend index.html
     res.sendFile(path.resolve(indexHtmlPath));
   } else {
@@ -332,13 +373,9 @@ app.get('/', (req, res) => {
   }
 });
 
-// Serve client build (optional - only if build exists)
-const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
-const indexHtmlPath = path.join(clientBuildPath, 'index.html');
-
 if (process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production') {
   // Check if client build directory exists
-  if (fs.existsSync(clientBuildPath) && fs.existsSync(indexHtmlPath)) {
+  if (clientBuildPath && indexHtmlPath && fs.existsSync(clientBuildPath) && fs.existsSync(indexHtmlPath)) {
     try {
       // Serve static files from client build
       app.use(express.static(clientBuildPath, {
@@ -436,24 +473,28 @@ if (process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production'
 // Handle both /api/health and /api/health/ (with trailing slash)
 app.get('/api/health', (req, res) => {
   try {
-    const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
-    const indexHtmlPath = path.join(clientBuildPath, 'index.html');
-    
     res.json({ 
       status: 'OK', 
       timestamp: new Date().toISOString(),
       service: 'Mangohick Fire Reporting API',
       environment: process.env.NODE_ENV || 'development',
       diagnostics: {
-        clientBuildExists: fs.existsSync(clientBuildPath),
-        indexHtmlExists: fs.existsSync(indexHtmlPath),
+        clientBuildPath: clientBuildPath || 'Not found',
+        indexHtmlPath: indexHtmlPath || 'Not found',
+        clientBuildExists: clientBuildPath ? fs.existsSync(clientBuildPath) : false,
+        indexHtmlExists: indexHtmlPath ? fs.existsSync(indexHtmlPath) : false,
         serveClientEnabled: process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production',
         jwtSecretSet: !!process.env.JWT_SECRET,
         databaseConfig: {
           host: process.env.DB_HOST ? 'Set' : 'Missing',
           name: process.env.DB_NAME ? 'Set' : 'Missing',
           user: process.env.DB_USER ? 'Set' : 'Missing'
-        }
+        },
+        checkedPaths: possibleBuildPaths.map(p => ({
+          path: p,
+          exists: fs.existsSync(p),
+          hasIndexHtml: fs.existsSync(path.join(p, 'index.html'))
+        }))
       }
     });
   } catch (error) {
@@ -466,25 +507,30 @@ app.get('/api/health', (req, res) => {
 });
 
 app.get('/api/health/', (req, res) => {
+  // Same as /api/health but with trailing slash
   try {
-    const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
-    const indexHtmlPath = path.join(clientBuildPath, 'index.html');
-    
     res.json({ 
       status: 'OK', 
       timestamp: new Date().toISOString(),
       service: 'Mangohick Fire Reporting API',
       environment: process.env.NODE_ENV || 'development',
       diagnostics: {
-        clientBuildExists: fs.existsSync(clientBuildPath),
-        indexHtmlExists: fs.existsSync(indexHtmlPath),
+        clientBuildPath: clientBuildPath || 'Not found',
+        indexHtmlPath: indexHtmlPath || 'Not found',
+        clientBuildExists: clientBuildPath ? fs.existsSync(clientBuildPath) : false,
+        indexHtmlExists: indexHtmlPath ? fs.existsSync(indexHtmlPath) : false,
         serveClientEnabled: process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production',
         jwtSecretSet: !!process.env.JWT_SECRET,
         databaseConfig: {
           host: process.env.DB_HOST ? 'Set' : 'Missing',
           name: process.env.DB_NAME ? 'Set' : 'Missing',
           user: process.env.DB_USER ? 'Set' : 'Missing'
-        }
+        },
+        checkedPaths: possibleBuildPaths.map(p => ({
+          path: p,
+          exists: fs.existsSync(p),
+          hasIndexHtml: fs.existsSync(path.join(p, 'index.html'))
+        }))
       }
     });
   } catch (error) {

@@ -6,8 +6,29 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
-const sequelize = require('./config/database');
+
+// Load environment variables
 require('dotenv').config();
+
+// Check for critical environment variables and warn if missing
+const criticalEnvVars = {
+  JWT_SECRET: process.env.JWT_SECRET,
+  NODE_ENV: process.env.NODE_ENV || 'development'
+};
+
+console.log('🔍 Environment Check:');
+console.log(`   NODE_ENV: ${criticalEnvVars.NODE_ENV}`);
+console.log(`   JWT_SECRET: ${criticalEnvVars.JWT_SECRET ? '✅ Set' : '❌ MISSING - Authentication will fail!'}`);
+console.log(`   PORT: ${process.env.PORT || '5000 (default)'}`);
+console.log(`   SERVE_CLIENT: ${process.env.SERVE_CLIENT || 'Not set'}`);
+
+if (!criticalEnvVars.JWT_SECRET) {
+  console.error('⚠️  WARNING: JWT_SECRET is not set! Authentication routes will fail.');
+  console.error('   Set JWT_SECRET in your .env file or environment variables.');
+}
+
+// Initialize database connection (lazy-loaded, won't crash if unavailable)
+const sequelize = require('./config/database');
 
 // ===== CRITICAL FIX: MongoDB to Sequelize Compatibility Layer =====
 // This adds MongoDB-style methods to Sequelize models so routes can work
@@ -132,10 +153,21 @@ try {
   addMongooseCompatibility();
 } catch (err) {
   console.error('Failed to initialize compatibility layer:', err.message);
+  console.error('Stack:', err.stack);
 }
+
 // ===== End of compatibility layer =====
 
-const app = express();
+// Initialize Express app early to catch any errors
+let app;
+try {
+  app = express();
+} catch (err) {
+  console.error('Failed to initialize Express:', err);
+  console.error('Stack:', err.stack);
+  process.exit(1);
+}
+
 const PORT = process.env.PORT || 5000;
 
 // Trust proxy for Vercel - but use specific IP ranges to avoid rate limit bypass
@@ -195,6 +227,7 @@ const routeModules = [
   // Note: /api/health is handled inline below (after routes load) to ensure it works
 ];
 
+// Wrap route loading in try-catch to prevent server crash
 let routesLoaded = 0;
 routeModules.forEach(({ path: routePath, module: modulePath }) => {
   try {
@@ -246,6 +279,17 @@ if (routesLoaded === routeModules.length) {
 } else {
   console.warn(`⚠️  Only ${routesLoaded}/${routeModules.length} routes loaded successfully`);
 }
+
+// Add startup logging (after routes are loaded)
+const clientBuildPathForLog = path.join(__dirname, '..', 'client', 'build');
+const indexHtmlPathForLog = path.join(clientBuildPathForLog, 'index.html');
+console.log('🚀 Server initialization complete');
+console.log(`📁 Client build path: ${clientBuildPathForLog}`);
+console.log(`📄 Index HTML path: ${indexHtmlPathForLog}`);
+console.log(`📦 Build exists: ${fs.existsSync(indexHtmlPathForLog)}`);
+console.log(`📦 Serve client: ${process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production'}`);
+console.log(`🔐 JWT Secret: ${process.env.JWT_SECRET ? 'Set' : 'MISSING - This will cause authentication errors!'}`);
+console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
 
 // Favicon handler (handle before other routes to avoid errors)
 app.get('/favicon.ico', (req, res) => {
@@ -306,26 +350,51 @@ if (process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production'
       // Send index.html for any non-API route (React Router catch-all)
       // Must use absolute path for sendFile
       const absoluteIndexPath = path.resolve(indexHtmlPath);
+      
+      // Verify the file exists before setting up the route
+      if (!fs.existsSync(absoluteIndexPath)) {
+        throw new Error(`Index HTML file does not exist at: ${absoluteIndexPath}`);
+      }
+      
       app.get(/^\/(?!api).*/, (req, res, next) => {
         // Skip if this is a static file request (should have been handled by express.static)
-        if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
-          return res.status(404).json({ error: 'Static file not found', path: req.path });
+        if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map)$/)) {
+          // Static files should have been served by express.static above
+          // If we reach here, the file wasn't found
+          return res.status(404).json({ 
+            error: 'Static file not found', 
+            path: req.path,
+            message: 'The requested static file was not found in the build directory'
+          });
+        }
+        
+        // Verify file still exists before sending
+        if (!fs.existsSync(absoluteIndexPath)) {
+          console.error(`Index HTML disappeared: ${absoluteIndexPath}`);
+          return res.status(500).json({ 
+            error: 'Frontend not available',
+            message: 'The frontend build files are missing'
+          });
         }
         
         try {
           res.sendFile(absoluteIndexPath, (err) => {
             if (err) {
               console.error('Error sending index.html:', err);
+              console.error('Request path:', req.path);
+              console.error('File path:', absoluteIndexPath);
               if (!res.headersSent) {
                 res.status(500).json({ 
                   error: 'Failed to serve frontend',
-                  message: err.message 
+                  message: err.message,
+                  path: req.path
                 });
               }
             }
           });
         } catch (error) {
           console.error('Error serving index.html:', error);
+          console.error('Request path:', req.path);
           if (!res.headersSent) {
             next(error);
           }
@@ -366,21 +435,65 @@ if (process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production'
 // Health check endpoint (register BEFORE 404 handler)
 // Handle both /api/health and /api/health/ (with trailing slash)
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    service: 'Mangohick Fire Reporting API',
-    environment: process.env.NODE_ENV || 'development'
-  });
+  try {
+    const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
+    const indexHtmlPath = path.join(clientBuildPath, 'index.html');
+    
+    res.json({ 
+      status: 'OK', 
+      timestamp: new Date().toISOString(),
+      service: 'Mangohick Fire Reporting API',
+      environment: process.env.NODE_ENV || 'development',
+      diagnostics: {
+        clientBuildExists: fs.existsSync(clientBuildPath),
+        indexHtmlExists: fs.existsSync(indexHtmlPath),
+        serveClientEnabled: process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production',
+        jwtSecretSet: !!process.env.JWT_SECRET,
+        databaseConfig: {
+          host: process.env.DB_HOST ? 'Set' : 'Missing',
+          name: process.env.DB_NAME ? 'Set' : 'Missing',
+          user: process.env.DB_USER ? 'Set' : 'Missing'
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'ERROR',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
 });
 
 app.get('/api/health/', (req, res) => {
-  res.json({ 
-    status: 'OK', 
-    timestamp: new Date().toISOString(),
-    service: 'Mangohick Fire Reporting API',
-    environment: process.env.NODE_ENV || 'development'
-  });
+  try {
+    const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
+    const indexHtmlPath = path.join(clientBuildPath, 'index.html');
+    
+    res.json({ 
+      status: 'OK', 
+      timestamp: new Date().toISOString(),
+      service: 'Mangohick Fire Reporting API',
+      environment: process.env.NODE_ENV || 'development',
+      diagnostics: {
+        clientBuildExists: fs.existsSync(clientBuildPath),
+        indexHtmlExists: fs.existsSync(indexHtmlPath),
+        serveClientEnabled: process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production',
+        jwtSecretSet: !!process.env.JWT_SECRET,
+        databaseConfig: {
+          host: process.env.DB_HOST ? 'Set' : 'Missing',
+          name: process.env.DB_NAME ? 'Set' : 'Missing',
+          user: process.env.DB_USER ? 'Set' : 'Missing'
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'ERROR',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
 });
 
 // 404 handler for API routes (must come AFTER all route definitions)
@@ -394,36 +507,72 @@ app.use('/api/*', (req, res) => {
 
 // Error handling middleware (must be after all routes)
 app.use((err, req, res, next) => {
-  console.error('Error:', err.message);
-  console.error('Stack:', err.stack);
-  console.error('Request path:', req.path);
-  console.error('Request method:', req.method);
+  // Log full error details
+  console.error('═══════════════════════════════════════════════════════');
+  console.error('❌ SERVER ERROR');
+  console.error('═══════════════════════════════════════════════════════');
+  console.error('Error Message:', err.message);
+  console.error('Request Path:', req.path);
+  console.error('Request Method:', req.method);
+  console.error('Request URL:', req.url);
+  console.error('Request Query:', req.query);
+  console.error('Stack Trace:', err.stack);
+  console.error('═══════════════════════════════════════════════════════');
   
   // Don't send stack trace in production
   const errorResponse = {
-    error: 'Something went wrong!',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+    error: 'Internal Server Error',
+    message: process.env.NODE_ENV === 'development' ? err.message : 'An error occurred processing your request'
   };
   
   if (process.env.NODE_ENV === 'development') {
     errorResponse.stack = err.stack;
     errorResponse.path = req.path;
     errorResponse.method = req.method;
+    errorResponse.details = {
+      name: err.name,
+      code: err.code
+    };
   }
   
-  res.status(err.status || 500).json(errorResponse);
+  // Make sure we haven't already sent a response
+  if (!res.headersSent) {
+    res.status(err.status || 500).json(errorResponse);
+  } else {
+    // If headers already sent, try to end the response
+    console.error('⚠️  Headers already sent, cannot send error response');
+  }
 });
 
-// Unhandled promise rejection handler
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
+// Unhandled promise rejection handler (only register once)
+if (!process.hasUnhandledRejectionHandler) {
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('═══════════════════════════════════════════════════════');
+    console.error('❌ UNHANDLED PROMISE REJECTION');
+    console.error('═══════════════════════════════════════════════════════');
+    console.error('Reason:', reason);
+    console.error('Reason Stack:', reason?.stack);
+    console.error('Promise:', promise);
+    console.error('═══════════════════════════════════════════════════════');
+    // Don't exit in production - log and continue
+    if (process.env.NODE_ENV === 'development') {
+      console.error('This is a development environment - you may want to fix this error');
+    }
+  });
+  process.hasUnhandledRejectionHandler = true;
+}
 
 // Uncaught exception handler
 process.on('uncaughtException', (error) => {
-  console.error('Uncaught Exception:', error);
+  console.error('═══════════════════════════════════════════════════════');
+  console.error('❌ UNCAUGHT EXCEPTION - CRITICAL ERROR');
+  console.error('═══════════════════════════════════════════════════════');
+  console.error('Error:', error);
+  console.error('Stack:', error.stack);
+  console.error('═══════════════════════════════════════════════════════');
   // Don't exit in serverless environments
   if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    console.error('Exiting process due to uncaught exception...');
     process.exit(1);
   }
 });

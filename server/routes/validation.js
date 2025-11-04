@@ -31,7 +31,7 @@ router.post('/nemsis', auth, [
       // Log ePHI access
       hipaaCompliance.createAuditLogEntry(
         'EPHI_ACCESS',
-        req.user._id,
+        req.user.id,
         recordData.recordId || 'unknown',
         {
           ephiElements: Object.keys(ephiElements),

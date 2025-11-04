@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -197,7 +198,6 @@ const routeModules = [
 let routesLoaded = 0;
 routeModules.forEach(({ path: routePath, module: modulePath }) => {
   try {
-    const fs = require('fs');
     // Extract just the filename from './routes/auth' -> 'auth'
     const routeName = modulePath.replace('./routes/', '');
     const routeFilePath = path.join(__dirname, 'routes', `${routeName}.js`);
@@ -247,43 +247,120 @@ if (routesLoaded === routeModules.length) {
   console.warn(`⚠️  Only ${routesLoaded}/${routeModules.length} routes loaded successfully`);
 }
 
-// Root route handler (for API server)
-app.get('/', (req, res) => {
-  res.json({ 
-    service: 'Mangohick Fire Reporting API',
-    version: '1.0.0',
-    endpoints: {
-      health: '/api/health',
-      auth: '/api/auth',
-      nemsis: '/api/nemsis',
-      nfirs: '/api/nfirs',
-      neris: '/api/neris'
-    },
-    message: 'This is the API server. The frontend should be served separately.',
-    vercel: !!process.env.VERCEL,
-    path: req.path,
-    url: req.url
-  });
+// Favicon handler (handle before other routes to avoid errors)
+app.get('/favicon.ico', (req, res) => {
+  const faviconPath = path.join(__dirname, '..', 'client', 'build', 'favicon.ico');
+  
+  if (fs.existsSync(faviconPath)) {
+    res.sendFile(path.resolve(faviconPath));
+  } else {
+    // Return 204 No Content instead of 404 to prevent browser console errors
+    res.status(204).end();
+  }
 });
 
-// Serve client build (optional - only if build exists)
-if (process.env.SERVE_CLIENT === 'true') {
-  const fs = require('fs');
+// Root route handler (for API server)
+app.get('/', (req, res) => {
+  // If client is being served, redirect to frontend, otherwise show API info
   const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
   const indexHtmlPath = path.join(clientBuildPath, 'index.html');
   
+  if (fs.existsSync(indexHtmlPath) && (process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production')) {
+    // Serve the frontend index.html
+    res.sendFile(path.resolve(indexHtmlPath));
+  } else {
+    // API info page
+    res.json({ 
+      service: 'Mangohick Fire Reporting API',
+      version: '1.0.0',
+      endpoints: {
+        health: '/api/health',
+        auth: '/api/auth',
+        nemsis: '/api/nemsis',
+        nfirs: '/api/nfirs',
+        neris: '/api/neris'
+      },
+      message: 'This is the API server. The frontend should be served separately.',
+      vercel: !!process.env.VERCEL,
+      path: req.path,
+      url: req.url
+    });
+  }
+});
+
+// Serve client build (optional - only if build exists)
+const clientBuildPath = path.join(__dirname, '..', 'client', 'build');
+const indexHtmlPath = path.join(clientBuildPath, 'index.html');
+
+if (process.env.SERVE_CLIENT === 'true' || process.env.NODE_ENV === 'production') {
   // Check if client build directory exists
   if (fs.existsSync(clientBuildPath) && fs.existsSync(indexHtmlPath)) {
-    app.use(express.static(clientBuildPath));
-    // Send index.html for any non-API route
-    app.get(/^\/(?!api).*/, (req, res) => {
-      res.sendFile(indexHtmlPath);
-    });
-    console.log('✅ Serving static client build from:', clientBuildPath);
+    try {
+      // Serve static files from client build
+      app.use(express.static(clientBuildPath, {
+        maxAge: '1d',
+        etag: true,
+        lastModified: true
+      }));
+      
+      // Send index.html for any non-API route (React Router catch-all)
+      // Must use absolute path for sendFile
+      const absoluteIndexPath = path.resolve(indexHtmlPath);
+      app.get(/^\/(?!api).*/, (req, res, next) => {
+        // Skip if this is a static file request (should have been handled by express.static)
+        if (req.path.match(/\.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$/)) {
+          return res.status(404).json({ error: 'Static file not found', path: req.path });
+        }
+        
+        try {
+          res.sendFile(absoluteIndexPath, (err) => {
+            if (err) {
+              console.error('Error sending index.html:', err);
+              if (!res.headersSent) {
+                res.status(500).json({ 
+                  error: 'Failed to serve frontend',
+                  message: err.message 
+                });
+              }
+            }
+          });
+        } catch (error) {
+          console.error('Error serving index.html:', error);
+          if (!res.headersSent) {
+            next(error);
+          }
+        }
+      });
+      
+      console.log('✅ Serving static client build from:', clientBuildPath);
+    } catch (error) {
+      console.error('❌ Error setting up static file serving:', error.message);
+      console.warn('   Frontend routes will not be available');
+    }
   } else {
-    console.warn('⚠️  SERVE_CLIENT=true but client build not found at:', clientBuildPath);
-    console.warn('   The frontend should be deployed separately or SERVE_CLIENT should be false.');
+    console.warn('⚠️  Client build not found at:', clientBuildPath);
+    console.warn('   Expected path:', indexHtmlPath);
+    console.warn('   The frontend should be deployed separately or build the client first.');
+    
+    // Add a fallback route handler for non-API routes
+    app.get(/^\/(?!api).*/, (req, res) => {
+      res.status(404).json({
+        error: 'Frontend not available',
+        message: 'The client build is not available. Please build the frontend or deploy it separately.',
+        path: req.path
+      });
+    });
   }
+} else {
+  // Development mode or SERVE_CLIENT=false - add fallback for non-API routes
+  app.get(/^\/(?!api).*/, (req, res) => {
+    res.status(404).json({
+      error: 'Route not found',
+      message: 'This is the API server. The frontend should be served separately.',
+      path: req.path,
+      hint: 'Set SERVE_CLIENT=true and build the client to serve it from this server'
+    });
+  });
 }
 
 // Health check endpoint (register BEFORE 404 handler)
@@ -319,10 +396,36 @@ app.use('/api/*', (req, res) => {
 app.use((err, req, res, next) => {
   console.error('Error:', err.message);
   console.error('Stack:', err.stack);
-  res.status(err.status || 500).json({ 
+  console.error('Request path:', req.path);
+  console.error('Request method:', req.method);
+  
+  // Don't send stack trace in production
+  const errorResponse = {
     error: 'Something went wrong!',
     message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-  });
+  };
+  
+  if (process.env.NODE_ENV === 'development') {
+    errorResponse.stack = err.stack;
+    errorResponse.path = req.path;
+    errorResponse.method = req.method;
+  }
+  
+  res.status(err.status || 500).json(errorResponse);
+});
+
+// Unhandled promise rejection handler
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// Uncaught exception handler
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  // Don't exit in serverless environments
+  if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
+    process.exit(1);
+  }
 });
 
 // Database connection and server start

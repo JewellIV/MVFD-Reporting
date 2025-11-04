@@ -101,7 +101,10 @@ const Settings: React.FC = () => {
                 <span className="text-sm font-medium text-gray-900">Offline Records</span>
               </div>
               <p className="mt-2 text-2xl font-bold text-gray-900">
-                {syncStatus?.offlineStatus?.find((s: any) => s._id === 'Pending')?.count || 0}
+                {(() => {
+                  const count = syncStatus?.offlineStatus?.find((s: any) => s._id === 'Pending')?.count;
+                  return typeof count === 'number' ? count : 0;
+                })()}
               </p>
               <p className="text-sm text-gray-500">Pending sync</p>
             </div>
@@ -111,7 +114,10 @@ const Settings: React.FC = () => {
                 <span className="text-sm font-medium text-gray-900">Synced Records</span>
               </div>
               <p className="mt-2 text-2xl font-bold text-gray-900">
-                {syncStatus?.offlineStatus?.find((s: any) => s._id === 'Synced')?.count || 0}
+                {(() => {
+                  const count = syncStatus?.offlineStatus?.find((s: any) => s._id === 'Synced')?.count;
+                  return typeof count === 'number' ? count : 0;
+                })()}
               </p>
               <p className="text-sm text-gray-500">Successfully synced</p>
             </div>
@@ -121,7 +127,10 @@ const Settings: React.FC = () => {
                 <span className="text-sm font-medium text-gray-900">Error Records</span>
               </div>
               <p className="mt-2 text-2xl font-bold text-gray-900">
-                {syncStatus?.offlineStatus?.find((s: any) => s._id === 'Error')?.count || 0}
+                {(() => {
+                  const count = syncStatus?.offlineStatus?.find((s: any) => s._id === 'Error')?.count;
+                  return typeof count === 'number' ? count : 0;
+                })()}
               </p>
               <p className="text-sm text-gray-500">Sync errors</p>
             </div>
@@ -161,7 +170,7 @@ const Settings: React.FC = () => {
               }`} />
               <div>
                 <p className="text-sm font-medium text-gray-900">
-                  CAD System Status: {cadStatus?.status || 'Unknown'}
+                  CAD System Status: {String(cadStatus?.status || 'Unknown')}
                 </p>
                 <p className="text-sm text-gray-500">
                   Last sync: {cadStatus?.lastSync ? new Date(cadStatus.lastSync).toLocaleString() : 'Never'}
@@ -231,8 +240,8 @@ const Settings: React.FC = () => {
               <div className="space-y-2">
                 {uploadStatus?.nemsis?.map((stat: any) => (
                   <div key={stat._id} className="flex justify-between text-sm">
-                    <span className="text-gray-500">{stat._id}:</span>
-                    <span className="font-medium">{stat.count}</span>
+                    <span className="text-gray-500">{String(stat?._id || 'N/A')}:</span>
+                    <span className="font-medium">{typeof stat?.count === 'number' ? stat.count : 0}</span>
                   </div>
                 ))}
               </div>
@@ -242,8 +251,8 @@ const Settings: React.FC = () => {
               <div className="space-y-2">
                 {uploadStatus?.nfirs?.map((stat: any) => (
                   <div key={stat._id} className="flex justify-between text-sm">
-                    <span className="text-gray-500">{stat._id}:</span>
-                    <span className="font-medium">{stat.count}</span>
+                    <span className="text-gray-500">{String(stat?._id || 'N/A')}:</span>
+                    <span className="font-medium">{typeof stat?.count === 'number' ? stat.count : 0}</span>
                   </div>
                 ))}
               </div>

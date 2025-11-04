@@ -22,17 +22,24 @@ router.post('/register', [
 
     const { username, email, password, firstName, lastName, badgeNumber, role } = req.body;
 
-    // Check if user already exists
+    // Check if user already exists (Sequelize query)
+    const { Op } = require('sequelize');
     const existingUser = await User.findOne({
-      $or: [{ email }, { username }, { badgeNumber }]
+      where: {
+        [Op.or]: [
+          { email },
+          { username },
+          ...(badgeNumber ? [{ badgeNumber }] : [])
+        ]
+      }
     });
 
     if (existingUser) {
       return res.status(400).json({ error: 'User already exists' });
     }
 
-    // Create new user
-    const user = new User({
+    // Create new user (Sequelize)
+    const user = await User.create({
       username,
       email,
       password,
@@ -42,11 +49,9 @@ router.post('/register', [
       role: role || 'firefighter'
     });
 
-    await user.save();
-
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: user.id },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -54,7 +59,7 @@ router.post('/register', [
     res.status(201).json({
       token,
       user: {
-        id: user._id,
+        id: user.id,
         username: user.username,
         email: user.email,
         firstName: user.firstName,
@@ -82,9 +87,15 @@ router.post('/login', [
 
     const { username, password } = req.body;
 
-    // Find user by username or email
+    // Find user by username or email (Sequelize query)
+    const { Op } = require('sequelize');
     const user = await User.findOne({
-      $or: [{ username }, { email: username }]
+      where: {
+        [Op.or]: [
+          { username },
+          { email: username }
+        ]
+      }
     });
 
     if (!user) {
@@ -103,7 +114,7 @@ router.post('/login', [
 
     // Generate JWT token
     const token = jwt.sign(
-      { userId: user._id },
+      { userId: user.id },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
@@ -111,7 +122,7 @@ router.post('/login', [
     res.json({
       token,
       user: {
-        id: user._id,
+        id: user.id,
         username: user.username,
         email: user.email,
         firstName: user.firstName,
@@ -132,7 +143,7 @@ router.get('/me', auth, async (req, res) => {
   try {
     res.json({
       user: {
-        id: req.user._id,
+        id: req.user.id,
         username: req.user.username,
         email: req.user.email,
         firstName: req.user.firstName,
@@ -170,11 +181,17 @@ router.put('/profile', auth, [
     if (email) updateData.email = email;
     if (certifications) updateData.certifications = certifications;
 
-    const user = await User.findByIdAndUpdate(
-      req.user._id,
-      updateData,
-      { new: true, runValidators: true }
-    ).select('-password');
+    // Update user (Sequelize)
+    await User.update(updateData, {
+      where: { id: req.user.id },
+      individualHooks: true,
+      validate: true
+    });
+
+    // Fetch updated user (Sequelize doesn't return updated object by default)
+    const user = await User.findByPk(req.user.id, {
+      attributes: { exclude: ['password'] }
+    });
 
     res.json({ user });
   } catch (error) {

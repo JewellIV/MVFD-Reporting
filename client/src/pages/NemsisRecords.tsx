@@ -191,20 +191,20 @@ const NemsisRecords: React.FC = () => {
                     <div className="ml-4">
                       <div className="flex items-center">
                         <p className="text-sm font-medium text-gray-900">
-                          {record.incident.incidentNumber}
+                          {String(record.incident?.incidentNumber || 'N/A')}
                         </p>
-                        {getStatusBadge(record.quality.status)}
+                        {getStatusBadge(record.quality?.status || 'Draft')}
                       </div>
                       <div className="mt-1 flex items-center text-sm text-gray-500">
                         <p>
-                          {new Date(record.incident.incidentDate).toLocaleDateString()} •{' '}
-                          {record.incident.incidentType}
+                          {record.incident?.incidentDate ? new Date(record.incident.incidentDate).toLocaleDateString() : 'N/A'} •{' '}
+                          {String(record.incident?.incidentType || 'N/A')}
                         </p>
                       </div>
                       <div className="mt-1 text-sm text-gray-500">
                         <p>
-                          Patient: {record.patient?.demographics?.age}yr {record.patient?.demographics?.gender} •{' '}
-                          {record.incident.location.address}
+                          Patient: {String(record.patient?.demographics?.age || 'N/A')}yr {String(record.patient?.demographics?.gender || 'N/A')} •{' '}
+                          {String(record.incident?.location?.address || 'N/A')}
                         </p>
                       </div>
                     </div>

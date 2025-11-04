@@ -220,25 +220,25 @@ const NfirsRecords: React.FC = () => {
                     <div className="ml-4">
                       <div className="flex items-center">
                         <p className="text-sm font-medium text-gray-900">
-                          {record.incidentNumber}
+                          {String(record.incidentNumber || 'N/A')}
                         </p>
-                        {getStatusBadge(record.quality.status)}
+                        {getStatusBadge(record.quality?.status || 'Draft')}
                       </div>
                       <div className="mt-1 flex items-center text-sm text-gray-500">
                         <p>
-                          {new Date(record.incidentDate).toLocaleDateString()} •{' '}
-                          {record.incidentType}
+                          {record.incidentDate ? new Date(record.incidentDate).toLocaleDateString() : 'N/A'} •{' '}
+                          {String(record.incidentType || 'N/A')}
                         </p>
                       </div>
                       <div className="mt-1 text-sm text-gray-500">
                         <p>
-                          {record.location.address}, {record.location.city} •{' '}
-                          Loss: {formatCurrency(record.loss?.totalLoss || 0)}
+                          {String(record.location?.address || 'N/A')}, {String(record.location?.city || 'N/A')} •{' '}
+                          Loss: {formatCurrency(Number(record.loss?.totalLoss) || 0)}
                         </p>
                       </div>
                       <div className="mt-1 text-sm text-gray-500">
                         <p>
-                          Injuries: {record.loss?.injuries?.civilian || 0} civilian, {record.loss?.injuries?.firefighter || 0} firefighter
+                          Injuries: {Number(record.loss?.injuries?.civilian) || 0} civilian, {Number(record.loss?.injuries?.firefighter) || 0} firefighter
                         </p>
                       </div>
                     </div>

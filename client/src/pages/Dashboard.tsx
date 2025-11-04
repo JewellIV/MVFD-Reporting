@@ -42,7 +42,7 @@ const Dashboard: React.FC = () => {
   const stats = [
     {
       name: 'NEMSIS Records',
-      value: nemsisStats || 0,
+      value: typeof nemsisStats === 'number' ? nemsisStats : 0,
       icon: DocumentTextIcon,
       color: 'text-blue-600',
       bgColor: 'bg-blue-100',
@@ -50,7 +50,7 @@ const Dashboard: React.FC = () => {
     },
     {
       name: 'NFIRS Records',
-      value: nfirsStats || 0,
+      value: typeof nfirsStats === 'number' ? nfirsStats : 0,
       icon: FireIcon,
       color: 'text-red-600',
       bgColor: 'bg-red-100',
@@ -66,7 +66,10 @@ const Dashboard: React.FC = () => {
     },
     {
       name: 'Pending Sync',
-      value: offlineStats?.offlineStatus?.find((s: any) => s._id === 'Pending')?.count || 0,
+      value: (() => {
+        const count = offlineStats?.offlineStatus?.find((s: any) => s._id === 'Pending')?.count;
+        return typeof count === 'number' ? count : 0;
+      })(),
       icon: ArrowUpTrayIcon,
       color: 'text-yellow-600',
       bgColor: 'bg-yellow-100',

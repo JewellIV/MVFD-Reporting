@@ -235,25 +235,25 @@ const Roster: React.FC = () => {
                     <div className="ml-4">
                       <div className="flex items-center">
                         <p className="text-sm font-medium text-gray-900">
-                          {member.firstName} {member.lastName}
+                          {String(member.firstName || '')} {String(member.lastName || '')}
                         </p>
-                        {getRoleBadge(member.role)}
-                        {getStatusBadge(member.isActive)}
+                        {member.role && getRoleBadge(String(member.role))}
+                        {typeof member.isActive === 'boolean' && getStatusBadge(member.isActive)}
                       </div>
                       <div className="mt-1 flex items-center text-sm text-gray-500">
                         <p>
-                          {member.email} • Badge #{member.badgeNumber || 'N/A'}
+                          {String(member.email || 'N/A')} • Badge #{String(member.badgeNumber || 'N/A')}
                         </p>
                       </div>
                       <div className="mt-1 text-sm text-gray-500">
                         <p>
-                          Department: {member.department}
+                          Department: {String(member.department || 'N/A')}
                         </p>
                       </div>
-                      {member.certifications && member.certifications.length > 0 && (
+                      {member.certifications && Array.isArray(member.certifications) && member.certifications.length > 0 && (
                         <div className="mt-1 text-sm text-gray-500">
                           <p>
-                            Certifications: {member.certifications.map((cert: any) => cert.type).join(', ')}
+                            Certifications: {member.certifications.map((cert: any) => String(cert?.type || 'Unknown')).join(', ')}
                           </p>
                         </div>
                       )}

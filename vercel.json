@@ -1,7 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "cd client && npm install && npm run build",
-  "installCommand": "npm install",
+  "buildCommand": "npm run build && mkdir -p public && cp -r client/build/* public/",
+  "installCommand": "npm run install-all",
+  "outputDirectory": "public",
   "functions": {
     "api/index.js": {
       "runtime": "@vercel/node",

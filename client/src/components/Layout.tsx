@@ -73,13 +73,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="flex-shrink-0">
                 <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
                   <span className="text-sm font-medium text-white">
-                    {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                    {user?.firstName ? String(user.firstName).charAt(0) : ''}
+                    {user?.lastName ? String(user.lastName).charAt(0) : ''}
                   </span>
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700">{user ? `${user.firstName} ${user.lastName}` : ''}</p>
-                <p className="text-xs text-gray-500">{user?.role}</p>
+                <p className="text-sm font-medium text-gray-700">
+                  {user ? `${String(user.firstName || '')} ${String(user.lastName || '')}`.trim() : ''}
+                </p>
+                <p className="text-xs text-gray-500">{user?.role ? String(user.role) : ''}</p>
               </div>
             </div>
             <button
@@ -120,13 +123,16 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="flex-shrink-0">
                 <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
                   <span className="text-sm font-medium text-white">
-                    {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                    {user?.firstName ? String(user.firstName).charAt(0) : ''}
+                    {user?.lastName ? String(user.lastName).charAt(0) : ''}
                   </span>
                 </div>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-700">{user ? `${user.firstName} ${user.lastName}` : ''}</p>
-                <p className="text-xs text-gray-500">{user?.role}</p>
+                <p className="text-sm font-medium text-gray-700">
+                  {user ? `${String(user.firstName || '')} ${String(user.lastName || '')}`.trim() : ''}
+                </p>
+                <p className="text-xs text-gray-500">{user?.role ? String(user.role) : ''}</p>
               </div>
             </div>
             <button
@@ -158,7 +164,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
               <div className="flex items-center gap-x-4 lg:gap-x-6">
                 {user?.badgeNumber && (
                   <span className="text-sm text-gray-700">
-                    Badge #{user.badgeNumber}
+                    Badge #{String(user.badgeNumber)}
                   </span>
                 )}
               </div>

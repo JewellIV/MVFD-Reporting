@@ -58,7 +58,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       authAPI.getCurrentUser()
         .then((userData) => {
           clearTimeout(timeoutId);
-          setUser(userData.user);
+          // Ensure all user data fields are primitives, not objects
+          if (userData && userData.user) {
+            const sanitizedUser: User = {
+              id: String(userData.user.id || ''),
+              username: String(userData.user.username || ''),
+              email: String(userData.user.email || ''),
+              firstName: String(userData.user.firstName || ''),
+              lastName: String(userData.user.lastName || ''),
+              role: String(userData.user.role || ''),
+              badgeNumber: userData.user.badgeNumber ? String(userData.user.badgeNumber) : undefined,
+              department: userData.user.department ? String(userData.user.department) : '',
+              lastLogin: userData.user.lastLogin ? String(userData.user.lastLogin) : undefined,
+            };
+            setUser(sanitizedUser);
+          }
         })
         .catch((error) => {
           clearTimeout(timeoutId);
@@ -78,7 +92,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await authAPI.login(username, password);
       localStorage.setItem('token', response.token);
-      setUser(response.user);
+      // Ensure all user data fields are primitives, not objects
+      if (response && response.user) {
+        const sanitizedUser: User = {
+          id: String(response.user.id || ''),
+          username: String(response.user.username || ''),
+          email: String(response.user.email || ''),
+          firstName: String(response.user.firstName || ''),
+          lastName: String(response.user.lastName || ''),
+          role: String(response.user.role || ''),
+          badgeNumber: response.user.badgeNumber ? String(response.user.badgeNumber) : undefined,
+          department: response.user.department ? String(response.user.department) : '',
+        };
+        setUser(sanitizedUser);
+      }
     } catch (error) {
       throw error;
     }

@@ -156,3 +156,4 @@ If this works, the issue is with your main server configuration.
 4. Check if Node.js is actually running
 5. Verify database credentials are correct
 
+

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm install && cd client && npm install && npm run build && cd .. && mkdir -p public && cp -r client/build/* public/",
+  "buildCommand": "echo 'Build starting...' && pwd && ls -la && if [ ! -d client ]; then echo 'ERROR: client directory missing!' && git ls-files client/ | head -10 && exit 1; fi && echo 'Client directory found' && cd client && npm install && npm run build && cd .. && mkdir -p public && cp -r client/build/* public/ && echo 'Build complete!'",
   "installCommand": "npm install",
   "outputDirectory": "public",
   "functions": {

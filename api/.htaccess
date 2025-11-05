@@ -1,0 +1,17 @@
+# PHP API Routing
+RewriteEngine On
+RewriteBase /api/
+
+# Allow CORS preflight
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]
+
+# Route all requests to index.php
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]
+
+# PHP settings
+php_value upload_max_filesize 10M
+php_value post_max_size 10M
+

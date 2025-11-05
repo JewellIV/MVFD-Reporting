@@ -64,7 +64,8 @@ echo [INFO] Building React application for cPanel deployment...
 echo [INFO] Using API URL: %REACT_APP_API_URL%
 if not defined REACT_APP_API_URL (
     echo [INFO] API URL not set - will use relative path /api
-    echo [INFO] This works when frontend and backend are on same domain
+    echo [INFO] This works when frontend and PHP backend are on same domain
+    echo [INFO] PHP backend will be in public_html/api/ directory
 )
 
 call npm run build

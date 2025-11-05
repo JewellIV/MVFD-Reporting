@@ -35,22 +35,28 @@ call npm install
 
 if errorlevel 1 (
     echo [ERROR] Failed to install client dependencies
+    cd ..
     exit /b 1
 )
 
 echo [SUCCESS] Client dependencies installed
 echo.
 
-REM Check if production.env exists
-if not exist "production.env" (
-    echo [WARNING] production.env not found.
+REM Check if .env exists (use .env for build, not production.env)
+if not exist ".env" (
+    echo [WARNING] .env not found in client directory.
     if exist "env.example" (
-        copy env.example .env >nul
+        copy "env.example" ".env" >nul 2>&1
+        if errorlevel 1 (
+            echo [ERROR] Failed to copy env.example to .env
+            exit /b 1
+        )
         echo [INFO] Created .env from env.example
         echo [INFO] Please update .env with your production configuration
+        echo [INFO] Set REACT_APP_API_URL to your backend API URL
     ) else (
-        echo [ERROR] No env.example found. Please create .env manually
-        exit /b 1
+        echo [WARNING] No env.example found. Building with default settings.
+        echo [WARNING] API URL will default to /api (relative path)
     )
 )
 
@@ -59,6 +65,7 @@ call npm run build
 
 if errorlevel 1 (
     echo [ERROR] Build failed!
+    cd ..
     exit /b 1
 )
 
@@ -79,12 +86,31 @@ echo [INFO] Creating deployment package...
 set BUILD_DIR=build-for-cpanel
 
 REM Remove old build directory if exists
-if exist "%BUILD_DIR%" rmdir /s /q "%BUILD_DIR%"
+if exist "%BUILD_DIR%" (
+    echo [INFO] Removing old build directory...
+    rmdir /s /q "%BUILD_DIR%"
+    if errorlevel 1 (
+        echo [WARNING] Could not remove old build directory. Continuing anyway...
+    )
+)
 mkdir "%BUILD_DIR%"
+if errorlevel 1 (
+    echo [ERROR] Failed to create build directory
+    exit /b 1
+)
 
 REM Copy build files
 echo [INFO] Copying build files...
-xcopy client\build\* "%BUILD_DIR%\" /E /I /H /Y >nul
+if not exist "client\build" (
+    echo [ERROR] client\build directory not found. Build may have failed.
+    exit /b 1
+)
+
+xcopy "client\build\*" "%BUILD_DIR%\" /E /I /H /Y
+if errorlevel 1 (
+    echo [ERROR] Failed to copy build files
+    exit /b 1
+)
 
 REM Create .htaccess for React Router
 echo [INFO] Creating .htaccess file for React Router...
@@ -92,45 +118,54 @@ echo [INFO] Creating .htaccess file for React Router...
 echo ^<IfModule mod_rewrite.c^>
 echo   RewriteEngine On
 echo   RewriteBase /
-echo   
+echo.
 echo   # Don't rewrite files or directories
 echo   RewriteCond %%{REQUEST_FILENAME} -f [OR]
 echo   RewriteCond %%{REQUEST_FILENAME} -d
 echo   RewriteRule ^ - [L]
-echo   
+echo.
 echo   # Rewrite everything else to index.html
 echo   RewriteRule ^ index.html [L]
-echo   
-echo   # Security headers
-echo   ^<IfModule mod_headers.c^>
-echo     Header set X-Frame-Options "SAMEORIGIN"
-echo     Header set X-Content-Type-Options "nosniff"
-echo     Header set X-XSS-Protection "1; mode=block"
-echo     Header set Referrer-Policy "strict-origin-when-cross-origin"
-echo     Header set Strict-Transport-Security "max-age=31536000; includeSubDomains"
-echo   ^</IfModule^>
-echo   
-echo   # Compress text files
-echo   ^<IfModule mod_deflate.c^>
-echo     AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
-echo   ^</IfModule^>
-echo   
-echo   # Cache static assets
-echo   ^<IfModule mod_expires.c^>
-echo     ExpiresActive On
-echo     ExpiresByType image/jpg "access plus 1 year"
-echo     ExpiresByType image/jpeg "access plus 1 year"
-echo     ExpiresByType image/gif "access plus 1 year"
-echo     ExpiresByType image/png "access plus 1 year"
-echo     ExpiresByType image/svg+xml "access plus 1 year"
-echo     ExpiresByType text/css "access plus 1 month"
-echo     ExpiresByType application/javascript "access plus 1 month"
-echo     ExpiresByType application/x-javascript "access plus 1 month"
-echo   ^</IfModule^>
+echo ^</IfModule^>
+echo.
+echo # Security headers
+echo ^<IfModule mod_headers.c^>
+echo   Header set X-Frame-Options "SAMEORIGIN"
+echo   Header set X-Content-Type-Options "nosniff"
+echo   Header set X-XSS-Protection "1; mode=block"
+echo   Header set Referrer-Policy "strict-origin-when-cross-origin"
+echo ^</IfModule^>
+echo.
+echo # Compress text files
+echo ^<IfModule mod_deflate.c^>
+echo   AddOutputFilterByType DEFLATE text/html text/plain text/xml text/css text/javascript application/javascript application/json
+echo ^</IfModule^>
+echo.
+echo # Cache static assets
+echo ^<IfModule mod_expires.c^>
+echo   ExpiresActive On
+echo   ExpiresByType image/jpg "access plus 1 year"
+echo   ExpiresByType image/jpeg "access plus 1 year"
+echo   ExpiresByType image/gif "access plus 1 year"
+echo   ExpiresByType image/png "access plus 1 year"
+echo   ExpiresByType image/svg+xml "access plus 1 year"
+echo   ExpiresByType text/css "access plus 1 month"
+echo   ExpiresByType application/javascript "access plus 1 month"
+echo   ExpiresByType application/x-javascript "access plus 1 month"
 echo ^</IfModule^>
 ) > "%BUILD_DIR%\.htaccess"
 
-echo [SUCCESS] .htaccess file created
+if errorlevel 1 (
+    echo [ERROR] Failed to create .htaccess file
+    exit /b 1
+)
+
+if exist "%BUILD_DIR%\.htaccess" (
+    echo [SUCCESS] .htaccess file created
+) else (
+    echo [ERROR] .htaccess file was not created
+    exit /b 1
+)
 echo.
 
 REM Create README for deployment

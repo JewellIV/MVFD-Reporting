@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "buildCommand": "npm run build && mkdir -p public && cp -r client/build/* public/",
-  "installCommand": "npm run install-all",
+  "buildCommand": "npm install && cd client && npm install && npm run build && cd .. && mkdir -p public && cp -r client/build/* public/",
+  "installCommand": "npm install",
   "outputDirectory": "public",
   "functions": {
     "api/index.js": {

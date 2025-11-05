@@ -526,6 +526,44 @@ app.get('/favicon.ico', (req, res) => {
   }
 });
 
+// Simple diagnostic endpoint (works even if server has issues)
+app.get('/api/diagnostic', (req, res) => {
+  try {
+    res.json({
+      status: 'OK',
+      timestamp: new Date().toISOString(),
+      server: {
+        nodeVersion: process.version,
+        platform: process.platform,
+        arch: process.arch,
+        workingDirectory: process.cwd(),
+        serverDirectory: __dirname,
+        environment: process.env.NODE_ENV || 'development',
+        port: process.env.PORT || 5000
+      },
+      environment: {
+        NODE_ENV: process.env.NODE_ENV || 'not set',
+        SERVE_CLIENT: process.env.SERVE_CLIENT || 'not set',
+        JWT_SECRET: process.env.JWT_SECRET ? 'Set' : 'MISSING',
+        DB_HOST: process.env.DB_HOST ? 'Set' : 'not set',
+        DB_NAME: process.env.DB_NAME ? 'Set' : 'not set',
+        DB_USER: process.env.DB_USER ? 'Set' : 'not set'
+      },
+      build: {
+        clientBuildPath: clientBuildPath || 'Not found',
+        indexHtmlPath: indexHtmlPath || 'Not found',
+        buildExists: clientBuildPath && indexHtmlPath ? fs.existsSync(indexHtmlPath) : false
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'ERROR',
+      error: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
 // Health check endpoint (register BEFORE 404 handler)
 // Handle both /api/health and /api/health/ (with trailing slash)
 app.get('/api/health', (req, res) => {
@@ -683,33 +721,61 @@ process.on('uncaughtException', (error) => {
 // Database connection and server start
 async function startServer() {
   try {
+    console.log('🚀 Starting server...');
+    console.log(`📁 Working directory: ${process.cwd()}`);
+    console.log(`📁 Server directory: ${__dirname}`);
+    console.log(`🌍 Node version: ${process.version}`);
+    console.log(`🔧 NODE_ENV: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🔧 PORT: ${process.env.PORT || 5000}`);
+    
     if (process.env.DB_SKIP_INIT === 'true') {
       console.warn('⚠️  DB initialization skipped due to DB_SKIP_INIT=true');
     } else {
       try {
+        console.log('📊 Attempting database connection...');
         await sequelize.authenticate();
-        console.log('Database connected successfully');
-        await sequelize.sync({ alter: true });
-        console.log('Database synchronized');
+        console.log('✅ Database connected successfully');
+        try {
+          await sequelize.sync({ alter: false }); // Changed to false to avoid data loss
+          console.log('✅ Database synchronized');
+        } catch (syncError) {
+          console.warn('⚠️  Database sync warning (continuing anyway):', syncError.message);
+          // Continue even if sync fails
+        }
       } catch (dbError) {
-        console.error('⚠️  Database connection failed (continuing anyway):', dbError.message);
+        console.error('❌ Database connection failed (continuing anyway):', dbError.message);
+        console.error('   Database host:', process.env.DB_HOST || 'not set');
+        console.error('   Database name:', process.env.DB_NAME || 'not set');
         // Don't exit - allow serverless functions to work without DB on startup
       }
     }
 
     // Only call app.listen() if not in serverless environment (Vercel, AWS Lambda, etc.)
     if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME && process.env.RUN_SERVER !== 'false') {
-      app.listen(PORT, () => {
+      app.listen(PORT, '0.0.0.0', () => {
         console.log(`🚒 Mangohick Fire Reporting Server running on port ${PORT}`);
         console.log(`📊 NEMSIS 3.5 & NFIRS/NERIS Reporting System`);
         console.log(`🔧 Environment: ${process.env.NODE_ENV || 'development'}`);
+        console.log(`🌐 Server accessible at: http://0.0.0.0:${PORT}`);
         if (process.env.DB_SKIP_INIT === 'true') {
           console.log('⚠️  Running with DB initialization skipped');
         }
+      }).on('error', (err) => {
+        console.error('❌ Failed to start server:', err.message);
+        if (err.code === 'EADDRINUSE') {
+          console.error(`   Port ${PORT} is already in use.`);
+          console.error('   Try changing PORT in environment variables or stop the other service.');
+        }
+        process.exit(1);
       });
     }
   } catch (error) {
-    console.error('Unable to start server:', error);
+    console.error('═══════════════════════════════════════════════════════');
+    console.error('❌ CRITICAL ERROR: Unable to start server');
+    console.error('═══════════════════════════════════════════════════════');
+    console.error('Error:', error.message);
+    console.error('Stack:', error.stack);
+    console.error('═══════════════════════════════════════════════════════');
     // In serverless, don't exit - just log the error
     if (!process.env.VERCEL && !process.env.AWS_LAMBDA_FUNCTION_NAME) {
       process.exit(1);

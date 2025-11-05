@@ -1,0 +1,52 @@
+FIXING .htaccess ERROR ON SERVER
+==================================
+
+The error "Invalid command 'ECHO'" means your server has a corrupted .htaccess file
+that contains Windows batch script commands instead of Apache directives.
+
+SOLUTION:
+---------
+
+1. Log into your cPanel account
+
+2. Open File Manager
+
+3. Navigate to your domain's public_html folder (or reporting subdirectory)
+
+4. DELETE the existing .htaccess file (it's corrupted)
+
+5. Upload the NEW .htaccess file from this build directory
+
+6. Make sure the file is named exactly ".htaccess" (starts with a dot)
+
+7. Set file permissions to 644
+
+8. Refresh your website
+
+IMPORTANT:
+----------
+
+- The .htaccess file must contain ONLY Apache directives
+- No Windows batch commands (ECHO, REM, etc.)
+- No extra spaces or characters
+- File must be plain text format
+
+If you still get errors, try the minimal version (.htaccess.minimal):
+- Rename .htaccess.minimal to .htaccess
+- Upload it to replace the corrupted file
+
+VERIFY FILE CONTENTS:
+---------------------
+
+The .htaccess file should start with:
+  <IfModule mod_rewrite.c>
+  RewriteEngine On
+
+It should NOT contain:
+  - ECHO
+  - REM
+  - Any Windows batch commands
+  - Any error messages
+
+If you see any of these, the file is corrupted and needs to be replaced.
+

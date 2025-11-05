@@ -36,4 +36,3 @@
   ExpiresByType application/javascript "access plus 1 month"
   ExpiresByType application/x-javascript "access plus 1 month"
 </IfModule>
-

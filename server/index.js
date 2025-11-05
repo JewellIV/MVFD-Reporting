@@ -288,6 +288,11 @@ const possibleBuildPaths = [
   path.join(__dirname, '..', 'build-for-cpanel'),    // CPanel deployment build
   path.join(__dirname, '..', 'public'),              // Public directory
   path.join(__dirname, '..', 'dist'),                // Alternative build directory
+  // Vercel serverless environment paths
+  ...(process.env.VERCEL ? [
+    path.join(process.env.LAMBDA_TASK_ROOT || __dirname, '..', 'client', 'build'),
+    path.join('/var/task', 'client', 'build'),
+  ] : []),
 ];
 
 // Find the first existing build directory

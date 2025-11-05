@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+// API URL configuration
+// For same-domain deployments (Vercel, traditional hosting), use relative URL '/api'
+// For cross-domain setups, set REACT_APP_API_URL in environment variables
+// Default to relative URL which works for most deployments
+const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
